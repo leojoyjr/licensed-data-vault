@@ -26,7 +26,7 @@ const READ_AT_US = 1_786_896_001_876_525;
 
 function license(overrides: Partial<LicenseMetadata> = {}): LicenseMetadata {
     return {
-        licenseId: "LIC-SPRINT2-001",
+        licenseId: "LIC-EXAMPLE-001",
         rightsHolder: "Example Archive Ltd",
         permittedUse: "training",
         expiresAt: "2027-01-01T00:00:00.000Z",
@@ -37,7 +37,7 @@ function license(overrides: Partial<LicenseMetadata> = {}): LicenseMetadata {
 
 function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
     return {
-        blobName: "vault/sprint2-sample.txt",
+        blobName: "licennode/example-dataset.txt",
         merkleRoot: BLOB_ROOT,
         license: license(),
         uploadedAt: "2026-08-16T15:24:00.589Z",
@@ -48,7 +48,7 @@ function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
 }
 
 function writeTestManifest(entries: ManifestEntry[]): string {
-    const manifestPath = join(mkdtempSync(join(tmpdir(), "vault-audit-")), "manifest.json");
+    const manifestPath = join(mkdtempSync(join(tmpdir(), "licennode-audit-")), "manifest.json");
     writeManifest(entries, manifestPath);
     return manifestPath;
 }
@@ -66,7 +66,7 @@ function readLoggedEvent(overrides: Record<string, unknown> = {}) {
         type: EVENT_TYPE,
         data: {
             blob_hash: BLOB_ROOT,
-            license_id: "LIC-SPRINT2-001",
+            license_id: "LIC-EXAMPLE-001",
             reader: READER,
             training_run_id: "run-sprint4",
             timestamp_us: String(READ_AT_US),
@@ -97,7 +97,7 @@ test("fetchReadReceipts decodes ReadLogged events from account transactions", as
 
     assert.equal(receipts.length, 1);
     assert.equal(receipts[0].blobHash, BLOB_ROOT);
-    assert.equal(receipts[0].licenseId, "LIC-SPRINT2-001");
+    assert.equal(receipts[0].licenseId, "LIC-EXAMPLE-001");
     assert.equal(receipts[0].reader, READER);
     assert.equal(receipts[0].trainingRunId, "run-sprint4");
     assert.equal(receipts[0].timestampUs, READ_AT_US);
@@ -215,7 +215,7 @@ test("generateAuditReport reports a licensed run as compliant", async () => {
     assert.equal(report.distinctBlobs, 1);
     assert.deepEqual(report.problems, []);
     assert.equal(report.reads[0].verdict, "compliant");
-    assert.equal(report.reads[0].blobName, "vault/sprint2-sample.txt");
+    assert.equal(report.reads[0].blobName, "licennode/example-dataset.txt");
     assert.equal(report.reads[0].license?.rightsHolder, "Example Archive Ltd");
 });
 
@@ -251,7 +251,7 @@ test("generateAuditReport flags a read that happened after its license expired",
 
     assert.equal(report.compliant, false);
     assert.equal(report.reads[0].verdict, "expired-at-read");
-    assert.match(report.problems[0], /happened after license LIC-SPRINT2-001 expired/);
+    assert.match(report.problems[0], /happened after license LIC-EXAMPLE-001 expired/);
 });
 
 test("generateAuditReport flags a read whose blob is not in the manifest", async () => {
@@ -318,7 +318,7 @@ test("formatAuditReport prints the verdict, each read, and the findings", async 
     const text = formatAuditReport(report);
     assert.match(text, /Audit report for training run run-sprint4/);
     assert.match(text, /verdict: COMPLIANT/);
-    assert.match(text, /OK {3}vault\/sprint2-sample\.txt/);
+    assert.match(text, /OK {3}licennode\/example-dataset\.txt/);
     assert.match(text, /txn 0xtxn1/);
     assert.doesNotMatch(text, /Findings:/);
 });
@@ -334,7 +334,7 @@ test("markdown report carries a verification entry for every read", async () => 
     const markdown = formatAuditReportAsMarkdown(report);
     assert.match(markdown, /^# Audit report for training run run-sprint4$/m);
     assert.match(markdown, /Verdict: compliant\./);
-    assert.match(markdown, /\| verified \| vault\/sprint2-sample\.txt \| LIC-SPRINT2-001 \|/);
+    assert.match(markdown, /\| verified \| licennode\/example-dataset\.txt \| LIC-EXAMPLE-001 \|/);
     // The verification section is the point of the Markdown format: an auditor must
     // be able to resolve every hash without trusting the report.
     assert.match(markdown, /## Verification/);

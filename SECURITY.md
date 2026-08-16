@@ -6,11 +6,11 @@ protected, how, and what is deliberately out of scope for a single-operator depl
 
 ## Threat model
 
-The vault has four assets worth protecting, in descending order of damage if lost:
+LicenNode has four assets worth protecting, in descending order of damage if lost:
 
 1. **The signing key.** It controls the shelbynet account that pays for storage
    and signs receipt transactions. A leak means someone else can spend the balance
-   and, worse, write receipts that appear to come from this vault.
+   and, worse, write receipts that appear to come from this deployment.
 2. **The integrity of the receipt log.** The whole claim of the project is that a
    read cannot happen without a permanent record. A forged or suppressed receipt
    breaks the claim.
@@ -65,7 +65,7 @@ filesystem.
 - **Request bodies** are length-capped per field, uploads are capped at 1 MB, and
   `express.json` has its own body limit. The two routes that spend tokens are rate
   limited per client, because a held-down button can otherwise empty the
-  account and take the vault offline.
+  account and take LicenNode offline.
 - **Numbers** such as `expirationDays` are bounds-checked rather than passed
   through, since they translate directly into storage cost.
 - **Report paths** are derived, not accepted. The training run ID becomes part of
@@ -120,10 +120,10 @@ single-operator deployment rather than a shared service.
   detectable in an audit, but it is not prevented. Anchoring a manifest hash on
   chain would close this.
 - **One key does everything.** Uploading, reading, and logging all use the same
-  account, so the receipt log proves the vault read a file, not which person did.
+  account, so the receipt log proves LicenNode read a file, not which person did.
   Distinct reader keys would make attribution meaningful.
 - **Rate limiting is in memory.** It resets when the process restarts and is per
   process, which is adequate for one operator and not for anything shared.
 - **No content encryption at rest.** Shelby stores the bytes as uploaded, so the
-  license is enforced by this vault's read path rather than by cryptography. A
+  license is enforced by LicenNode's read path rather than by cryptography. A
   party who obtains a blob name and has direct Shelby access is outside the model.

@@ -6,7 +6,7 @@ import {
     Network,
     type InputGenerateTransactionPayloadData,
 } from "@aptos-labs/ts-sdk";
-import { loadVaultEnv } from "../config/env.js";
+import { loadLicenNodeEnv } from "../config/env.js";
 import type { ReadEvent } from "../read/receiptMiddleware.js";
 
 /**
@@ -60,7 +60,7 @@ export function createAptosReceiptLogSubmitter(): ReceiptLogSubmitter {
         return cachedSubmitter;
     }
 
-    const env = loadVaultEnv();
+    const env = loadLicenNodeEnv();
     const aptos = new Aptos(
         new AptosConfig({
             network: Network.CUSTOM,
@@ -123,7 +123,7 @@ export async function logReadOnChain(params: LogReadOnChainParams): Promise<stri
         throw new Error("trainingRunId is required to log a read on chain.");
     }
 
-    const env = loadVaultEnv();
+    const env = loadLicenNodeEnv();
     const submitter = params.submitter ?? createAptosReceiptLogSubmitter();
 
     try {

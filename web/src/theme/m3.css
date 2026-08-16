@@ -1,9 +1,9 @@
 /*
- * Layout and surface styling for the vault site. Every color, radius, and font
+ * Layout and surface styling for the LicenNode site. Every color, radius, and font
  * value here reads a custom property defined in src/theme/m3Tokens.ts. Nothing in
  * this file hardcodes a color, so retheming means editing the token file only.
  *
- * Spacing uses multiples of --vault-spacing-base, which is the 4dp grid described
+ * Spacing uses multiples of --licennode-spacing-base, which is the 4dp grid described
  * at https://m3.material.io/foundations/layout/understanding-layout/spacing.
  */
 
@@ -107,9 +107,9 @@ body {
 .top-app-bar {
     display: flex;
     align-items: center;
-    gap: calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 4);
     height: 64px;
-    padding: 0 calc(var(--vault-spacing-base) * 4);
+    padding: 0 calc(var(--licennode-spacing-base) * 4);
     background: var(--md-sys-color-surface);
     color: var(--md-sys-color-on-surface);
     position: sticky;
@@ -150,8 +150,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: calc(var(--vault-spacing-base) * 3);
-    padding: calc(var(--vault-spacing-base) * 3) 0;
+    gap: calc(var(--licennode-spacing-base) * 3);
+    padding: calc(var(--licennode-spacing-base) * 3) 0;
     background: var(--md-sys-color-surface);
 }
 
@@ -165,7 +165,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--vault-spacing-base);
+    gap: var(--licennode-spacing-base);
     width: 100%;
     padding: 0;
     border: none;
@@ -232,17 +232,17 @@ body {
 }
 
 .main-pane {
-    padding: calc(var(--vault-spacing-base) * 6);
+    padding: calc(var(--licennode-spacing-base) * 6);
     display: flex;
     flex-direction: column;
-    gap: calc(var(--vault-spacing-base) * 6);
+    gap: calc(var(--licennode-spacing-base) * 6);
     max-width: 1040px;
 }
 
 .view-header {
     display: flex;
     flex-direction: column;
-    gap: calc(var(--vault-spacing-base) * 2);
+    gap: calc(var(--licennode-spacing-base) * 2);
 }
 
 /* Card content padding is 16dp, and cards use the medium corner token. */
@@ -258,14 +258,14 @@ md-elevated-card {
 .card-body {
     display: flex;
     flex-direction: column;
-    gap: calc(var(--vault-spacing-base) * 4);
-    padding: calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 4);
+    padding: calc(var(--licennode-spacing-base) * 4);
 }
 
 .field-row {
     display: flex;
     flex-wrap: wrap;
-    gap: calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 4);
 }
 
 .field-row>* {
@@ -275,7 +275,7 @@ md-elevated-card {
 .actions-row {
     display: flex;
     align-items: center;
-    gap: calc(var(--vault-spacing-base) * 3);
+    gap: calc(var(--licennode-spacing-base) * 3);
 }
 
 .file-input {
@@ -284,7 +284,7 @@ md-elevated-card {
     color: var(--md-sys-color-on-surface);
     border: 1px solid var(--md-sys-color-outline);
     border-radius: var(--md-sys-shape-corner-extra-small);
-    padding: calc(var(--vault-spacing-base) * 3);
+    padding: calc(var(--licennode-spacing-base) * 3);
     width: 100%;
     background: var(--md-sys-color-surface);
 }
@@ -302,7 +302,7 @@ md-elevated-card {
 .detail-grid {
     display: grid;
     grid-template-columns: minmax(160px, 220px) 1fr;
-    gap: calc(var(--vault-spacing-base) * 2) calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 2) calc(var(--licennode-spacing-base) * 4);
 }
 
 .detail-grid dt {
@@ -346,8 +346,8 @@ a.explorer-link:focus-visible {
 .error-banner {
     display: flex;
     flex-direction: column;
-    gap: var(--vault-spacing-base);
-    padding: calc(var(--vault-spacing-base) * 4);
+    gap: var(--licennode-spacing-base);
+    padding: calc(var(--licennode-spacing-base) * 4);
     border-radius: var(--md-sys-shape-corner-medium);
     background: var(--md-sys-color-error-container);
     color: var(--md-sys-color-on-error-container);
@@ -356,20 +356,20 @@ a.explorer-link:focus-visible {
 .status-row {
     display: flex;
     align-items: center;
-    gap: calc(var(--vault-spacing-base) * 2);
+    gap: calc(var(--licennode-spacing-base) * 2);
     color: var(--md-sys-color-on-surface-variant);
 }
 
 .read-list {
     display: flex;
     flex-direction: column;
-    gap: calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 4);
 }
 
 .chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: calc(var(--vault-spacing-base) * 2);
+    gap: calc(var(--licennode-spacing-base) * 2);
     align-items: center;
 }
 
@@ -383,12 +383,12 @@ a.explorer-link:focus-visible {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(var(--vault-spacing-base) * 4);
+    bottom: calc(var(--licennode-spacing-base) * 4);
     min-height: 48px;
     display: flex;
     align-items: center;
-    gap: calc(var(--vault-spacing-base) * 2);
-    padding: calc(var(--vault-spacing-base) * 3) calc(var(--vault-spacing-base) * 4);
+    gap: calc(var(--licennode-spacing-base) * 2);
+    padding: calc(var(--licennode-spacing-base) * 3) calc(var(--licennode-spacing-base) * 4);
     border-radius: var(--md-sys-shape-corner-extra-small);
     background: var(--md-sys-color-inverse-surface);
     color: var(--md-sys-color-inverse-on-surface);
@@ -416,6 +416,6 @@ a.explorer-link:focus-visible {
     }
 
     .main-pane {
-        padding-bottom: calc(var(--vault-spacing-base) * 24);
+        padding-bottom: calc(var(--licennode-spacing-base) * 24);
     }
 }

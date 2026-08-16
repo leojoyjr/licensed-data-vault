@@ -35,7 +35,7 @@ function createRecordingUploader(): BlobUploader & { calls: string[] } {
 }
 
 function makeWorkspace(): { directory: string; manifestPath: string } {
-    const directory = mkdtempSync(join(tmpdir(), "vault-test-"));
+    const directory = mkdtempSync(join(tmpdir(), "licennode-test-"));
     return { directory, manifestPath: join(directory, "manifest.json") };
 }
 
@@ -99,7 +99,7 @@ test("uploadLicensedFile writes a manifest entry with the merkle root", async ()
 
     const { entry } = await uploadLicensedFile({
         filePath,
-        blobName: "vault/sample.txt",
+        blobName: "licennode/sample.txt",
         license: validLicense(),
         expirationDays: 30,
         rootDirectory: directory,
@@ -108,13 +108,13 @@ test("uploadLicensedFile writes a manifest entry with the merkle root", async ()
         now: NOW,
     });
 
-    assert.deepEqual(uploader.calls, ["vault/sample.txt"]);
+    assert.deepEqual(uploader.calls, ["licennode/sample.txt"]);
     assert.equal(entry.merkleRoot, "0xdeadbeef");
     assert.equal(entry.sizeBytes, "training sample".length);
     assert.equal(entry.uploadedAt, NOW.toISOString());
     assert.equal(entry.blobExpiresAt, "2026-01-31T00:00:00.000Z");
 
-    const stored = findManifestEntry("vault/sample.txt", manifestPath);
+    const stored = findManifestEntry("licennode/sample.txt", manifestPath);
     assert.equal(stored?.license.licenseId, "LIC-001");
 });
 
@@ -127,7 +127,7 @@ test("uploadLicensedFile rejects an invalid license before uploading", async () 
     await assert.rejects(
         uploadLicensedFile({
             filePath,
-            blobName: "vault/sample.txt",
+            blobName: "licennode/sample.txt",
             license: validLicense({ expiresAt: "2025-01-01T00:00:00.000Z" }),
             expirationDays: 30,
             rootDirectory: directory,
@@ -138,12 +138,12 @@ test("uploadLicensedFile rejects an invalid license before uploading", async () 
         LicenseValidationError,
     );
     assert.deepEqual(uploader.calls, []);
-    assert.equal(findManifestEntry("vault/sample.txt", manifestPath), undefined);
+    assert.equal(findManifestEntry("licennode/sample.txt", manifestPath), undefined);
 });
 
 test("uploadLicensedFile refuses a path outside the root directory", async () => {
     const { directory, manifestPath } = makeWorkspace();
-    const outsideDirectory = mkdtempSync(join(tmpdir(), "vault-outside-"));
+    const outsideDirectory = mkdtempSync(join(tmpdir(), "licennode-outside-"));
     const secretPath = join(outsideDirectory, "secret.env");
     writeFileSync(secretPath, "SHELBY_ACCOUNT_PRIVATE_KEY=ed25519-priv-0xabc");
     const uploader = createRecordingUploader();
@@ -151,7 +151,7 @@ test("uploadLicensedFile refuses a path outside the root directory", async () =>
     await assert.rejects(
         uploadLicensedFile({
             filePath: secretPath,
-            blobName: "vault/secret.env",
+            blobName: "licennode/secret.env",
             license: validLicense(),
             expirationDays: 30,
             rootDirectory: directory,

@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
  * documents each one with a zero-filled placeholder. The private key is read
  * here and nowhere else, and is never included in error messages or logs.
  */
-export interface VaultEnv {
+export interface LicenNodeEnv {
     accountAddress: string;
     accountPrivateKey: string;
     aptosNetwork: string;
@@ -35,7 +35,7 @@ const HEX_ADDRESS = /^0x[0-9a-fA-F]{1,64}$/;
 /**
  * The .env lives beside the project, not beside whoever happens to be calling.
  * The web API's working directory is web/, so a cwd-relative default made the
- * same vault look unconfigured depending on which entry point you used. Real
+ * same install look unconfigured depending on which entry point you used. Real
  * process environment variables still win, which is how deployments should
  * supply these.
  */
@@ -82,7 +82,7 @@ function readEnvFile(envFilePath: string): Record<string, string> {
  * Loads configuration and fails immediately with every missing variable listed,
  * so a misconfigured setup is fixed in one pass instead of one error at a time.
  */
-export function loadVaultEnv(envFilePath = DEFAULT_ENV_FILE_PATH): VaultEnv {
+export function loadLicenNodeEnv(envFilePath = DEFAULT_ENV_FILE_PATH): LicenNodeEnv {
     const fileValues = readEnvFile(envFilePath);
     const resolveValue = (key: string): string | undefined => {
         const value = process.env[key] ?? fileValues[key];

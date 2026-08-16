@@ -8,7 +8,7 @@ import {
 import type { ReadEvent } from "../src/read/receiptMiddleware.js";
 
 /**
- * logReadOnChain reads RECEIPT_LOG_MODULE_ADDRESS through loadVaultEnv, so these
+ * logReadOnChain reads RECEIPT_LOG_MODULE_ADDRESS through loadLicenNodeEnv, so these
  * tests set the variables in the process environment rather than relying on a .env
  * file. Process variables take precedence, which keeps the tests independent of
  * whatever the local .env holds.
@@ -26,12 +26,12 @@ const MERKLE_ROOT = "0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e
 function readEvent(overrides: Partial<ReadEvent> = {}): ReadEvent {
     return {
         blobHash: MERKLE_ROOT,
-        licenseId: "LIC-SPRINT2-001",
+        licenseId: "LIC-EXAMPLE-001",
         readerId: "trainer-1",
         trainingRunId: "run-sprint4",
         timestamp: "2026-08-16T15:24:00.589Z",
         receiptPayload: {
-            blobName: "vault/sprint2-sample.txt",
+            blobName: "licennode/example-dataset.txt",
             servedByAccount: "0xabc",
             merkleRoot: MERKLE_ROOT,
             contentSha256: "0xdeadbeef",
@@ -87,7 +87,7 @@ test("logReadOnChain builds the entry function payload the published module expe
         Array.from(payload.functionArguments[0] as Uint8Array),
         Array.from(decodeHexToBytes(MERKLE_ROOT)),
     );
-    assert.equal(payload.functionArguments[1], "LIC-SPRINT2-001");
+    assert.equal(payload.functionArguments[1], "LIC-EXAMPLE-001");
     assert.equal(payload.functionArguments[2], "run-sprint4");
 });
 

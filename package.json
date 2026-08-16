@@ -1,8 +1,8 @@
 {
-    "name": "licensed-data-vault",
+    "name": "licennode",
     "version": "0.1.0",
     "private": true,
-    "description": "Licensed training data vault on Shelby with per-asset consent receipts",
+    "description": "LicenNode: licensed training data on Shelby with per-asset consent receipts",
     "type": "module",
     "engines": {
         "node": ">=22"

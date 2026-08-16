@@ -1,5 +1,5 @@
 /**
- * License metadata attached to every file in the vault.
+ * License metadata attached to every file LicenNode stores.
  *
  * Expiry is stored per file rather than per dataset because a dataset is only as
  * compliant as its most restrictive asset. One image whose license lapsed last
@@ -11,7 +11,7 @@ export const PERMITTED_USES = ["training", "inference", "evaluation"] as const;
 export type PermittedUse = (typeof PERMITTED_USES)[number];
 
 export interface LicenseMetadata {
-    /** Stable identifier for the license agreement, unique within the vault. */
+    /** Stable identifier for the license agreement, unique within a LicenNode install. */
     licenseId: string;
     /** Legal entity or person who holds the rights being granted. */
     rightsHolder: string;

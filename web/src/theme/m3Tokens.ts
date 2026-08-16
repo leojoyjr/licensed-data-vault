@@ -234,7 +234,7 @@ export function buildM3TokenCss(): string {
     for (const [level, dp] of Object.entries(M3_ELEVATION_DP)) {
         declarations.push(`--md-sys-elevation-${level}: ${dp};`);
     }
-    declarations.push(`--vault-spacing-base: ${M3_SPACING_BASE_PX}px;`);
+    declarations.push(`--licennode-spacing-base: ${M3_SPACING_BASE_PX}px;`);
 
     return `:root {\n  ${declarations.join("\n  ")}\n}`;
 }

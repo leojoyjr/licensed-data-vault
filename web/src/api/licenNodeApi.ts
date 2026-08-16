@@ -50,12 +50,12 @@ export interface AuditResponse {
  * A failed call carries the server's message so the UI can show the actual
  * reason, for example a license that expired before the read was attempted.
  */
-export class VaultApiError extends Error {
+export class LicenNodeApiError extends Error {
     readonly status: number;
 
     constructor(status: number, message: string) {
         super(message);
-        this.name = "VaultApiError";
+        this.name = "LicenNodeApiError";
         this.status = status;
     }
 }
@@ -65,14 +65,14 @@ async function parseResponse<T>(response: Response): Promise<T> {
     try {
         payload = await response.json();
     } catch {
-        throw new VaultApiError(response.status, "The API returned a response that was not JSON.");
+        throw new LicenNodeApiError(response.status, "The API returned a response that was not JSON.");
     }
     if (!response.ok) {
         const message =
             typeof payload === "object" && payload !== null && "error" in payload
                 ? String((payload as { error: unknown }).error)
                 : `The request failed with status ${response.status}.`;
-        throw new VaultApiError(response.status, message);
+        throw new LicenNodeApiError(response.status, message);
     }
     return payload as T;
 }

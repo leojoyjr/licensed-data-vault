@@ -2,9 +2,9 @@ import { useState } from "react";
 import { PERMITTED_USES, type PermittedUse } from "../../../src/licenses/schema.js";
 import {
     readLicensedBlobRequest,
-    VaultApiError,
+    LicenNodeApiError,
     type ReadResponse,
-} from "../api/vaultApi.js";
+} from "../api/licenNodeApi.js";
 import { BusyIndicator, DetailList, ErrorBanner } from "../components/Feedback.js";
 import "../components/material.js";
 
@@ -63,13 +63,13 @@ export function ReadView({ knownBlobNames, onNotify }: ReadViewProps) {
             setResult(response);
             onNotify(`Receipt logged for ${response.receipt.blobName}.`);
         } catch (cause) {
-            if (cause instanceof VaultApiError && cause.status === 403) {
+            if (cause instanceof LicenNodeApiError && cause.status === 403) {
                 // A refusal is the system working, so it is reported separately from
                 // a transport or configuration failure.
                 setDenied(cause.message);
             } else {
                 setFailed(
-                    cause instanceof VaultApiError
+                    cause instanceof LicenNodeApiError
                         ? cause.message
                         : "The read failed before it reached Shelby.",
                 );

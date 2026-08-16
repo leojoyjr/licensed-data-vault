@@ -4,8 +4,8 @@ import type { ManifestEntry } from "../../../src/licenses/schema.js";
 import {
     fileToBase64,
     uploadLicensedFileRequest,
-    VaultApiError,
-} from "../api/vaultApi.js";
+    LicenNodeApiError,
+} from "../api/licenNodeApi.js";
 import { BusyIndicator, DetailList, ErrorBanner } from "../components/Feedback.js";
 import "../components/material.js";
 
@@ -93,7 +93,7 @@ export function UploadView({ onUploaded, onNotify }: UploadViewProps) {
             onNotify(`Uploaded ${response.entry.blobName} to Shelby.`);
         } catch (cause) {
             setError(
-                cause instanceof VaultApiError
+                cause instanceof LicenNodeApiError
                     ? cause.message
                     : "The upload failed before it reached Shelby.",
             );

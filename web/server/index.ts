@@ -10,7 +10,7 @@ import { LicenseDeniedError, readLicensedBlob } from "../../src/read/receiptMidd
 import { uploadLicensedFile } from "../../src/upload/uploadPipeline.js";
 
 /**
- * Thin HTTP layer over the vault functions from Sprints 2 through 5.
+ * Thin HTTP layer over the LicenNode functions from Sprints 2 through 5.
  *
  * It holds no business logic. Uploads call uploadLicensedFile, reads call
  * readLicensedBlob, and audits call generateAuditReport, so the license rules and
@@ -82,7 +82,7 @@ function readPermittedUse(body: Record<string, unknown>, field: string): Permitt
 /**
  * Blob names become paths in Shelby's namespace, so they are restricted to a
  * conservative character set. Rejecting "." segments blocks a name that would
- * resolve outside the vault prefix.
+ * resolve outside the LicenNode prefix.
  */
 function readBlobName(body: Record<string, unknown>, field: string): string {
     const value = readStringField(body, field);
@@ -138,7 +138,7 @@ function readExpirationDays(body: Record<string, unknown>): number {
 
 /**
  * Throttles the two routes that spend tokens. Without this a held-down button
- * could empty the ShelbyUSD balance and take the vault offline.
+ * could empty the ShelbyUSD balance and take LicenNode offline.
  */
 function enforcePaidRequestInterval(request: Request): void {
     const client = request.ip ?? "unknown";
@@ -154,7 +154,7 @@ function enforcePaidRequestInterval(request: Request): void {
 }
 
 /**
- * Maps a failure to a status and a message. Vault errors carry the real reason,
+ * Maps a failure to a status and a message. LicenNode errors carry the real reason,
  * for example which license rule refused a read, and those are worth showing.
  * Anything unrecognized becomes a generic 500 rather than leaking internals.
  */
@@ -207,7 +207,7 @@ app.post("/api/upload", async (request, response) => {
         const bytes = decodeUploadBytes(body);
         const expirationDays = readExpirationDays(body);
 
-        temporaryDirectory = mkdtempSync(join(tmpdir(), "vault-web-upload-"));
+        temporaryDirectory = mkdtempSync(join(tmpdir(), "licennode-web-upload-"));
         // The file name is hashed rather than reused, so a crafted name cannot
         // influence the path even though the pipeline also guards its root.
         const safeName = createHash("sha256").update(fileName).digest("hex").slice(0, 32);
@@ -284,7 +284,7 @@ app.get("/api/audit", async (request, response) => {
     }
 });
 
-const port = Number(process.env.VAULT_API_PORT ?? DEFAULT_PORT);
+const port = Number(process.env.LICENNODE_API_PORT ?? DEFAULT_PORT);
 app.listen(port, () => {
-    console.log(`Vault API listening on http://localhost:${port}`);
+    console.log(`LicenNode API listening on http://localhost:${port}`);
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReportedRead, ReadVerdict } from "../../../src/audit/reportGenerator.js";
-import { fetchAuditReport, VaultApiError, type AuditResponse } from "../api/vaultApi.js";
+import { fetchAuditReport, LicenNodeApiError, type AuditResponse } from "../api/licenNodeApi.js";
 import { BusyIndicator, DetailList, ErrorBanner } from "../components/Feedback.js";
 import "../components/material.js";
 
@@ -75,7 +75,7 @@ export function AuditView({ onNotify }: AuditViewProps) {
             );
         } catch (cause) {
             setError(
-                cause instanceof VaultApiError
+                cause instanceof LicenNodeApiError
                     ? cause.message
                     : "The audit could not be generated.",
             );

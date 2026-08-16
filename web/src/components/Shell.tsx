@@ -46,7 +46,7 @@ export function Shell({ activeView, onNavigate, children }: ShellProps) {
                 <span className="top-app-bar__leading" aria-hidden="true">
                     <md-icon>shield_lock</md-icon>
                 </span>
-                <h1 className="m3-title-large">Licensed Training Data Vault</h1>
+                <h1 className="m3-title-large">LicenNode</h1>
                 <span className="top-app-bar__account m3-label-medium">Shelby testnet</span>
             </header>
             <div className="app-shell">
@@ -55,7 +55,7 @@ export function Shell({ activeView, onNavigate, children }: ShellProps) {
                  * so tab semantics describe it more accurately than a nav landmark
                  * full of links that go nowhere.
                  */}
-                <nav className="nav-rail" role="tablist" aria-label="Vault sections">
+                <nav className="nav-rail" role="tablist" aria-label="LicenNode sections">
                     {SHELL_DESTINATIONS.map((destination) => {
                         const selected = destination.id === activeView;
                         return (

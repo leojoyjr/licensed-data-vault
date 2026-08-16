@@ -76,7 +76,7 @@ export class LicenseDeniedError extends Error {
 /**
  * Downloading is expressed as this interface so tests can stub the Shelby call.
  * It returns bytes rather than a stream because the receipt needs the whole blob
- * to recompute commitments, and vault assets are individual training files.
+ * to recompute commitments, and LicenNode assets are individual training files.
  */
 export interface BlobDownloader {
     download(params: { blobName: string }): Promise<{
@@ -138,7 +138,7 @@ export interface ReadLicensedBlobParams {
 }
 
 /**
- * The only path through which vault data may be read. It resolves the blob's
+ * The only path through which LicenNode data may be read. It resolves the blob's
  * license from the manifest, refuses the read if the license does not cover the
  * declared use or has expired, and only then downloads. Checking first means an
  * unauthorized read never fetches bytes, so there is nothing to leak.
@@ -228,7 +228,7 @@ export async function readLicensedBlob(
     };
 
     // A chain write failure propagates and the caller gets no content, even though
-    // the bytes were already fetched. That is deliberate: the vault's guarantee is
+    // the bytes were already fetched. That is deliberate: LicenNode's guarantee is
     // that every served read is logged, so a read the audit trail does not contain
     // must not look like a successful read. Returning content with a swallowed
     // logging error would produce exactly the silent gap the audit exists to catch.

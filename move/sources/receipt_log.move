@@ -1,4 +1,4 @@
-/// Append-only log of licensed reads from the data vault.
+/// Append-only log of licensed reads from LicenNode.
 ///
 /// Each read emits one event. Nothing is stored mutably, because an audit log
 /// that can be edited proves nothing. Events are permanent in the transaction
