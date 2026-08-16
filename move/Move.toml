@@ -1,0 +1,15 @@
+[package]
+name = "receipt_log"
+version = "1.0.0"
+authors = []
+
+[addresses]
+# Resolved at compile and publish time with --named-addresses receipt_log=<address>,
+# so the module address is whatever account signs the publish rather than a value
+# baked into a tracked file.
+receipt_log = "_"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"

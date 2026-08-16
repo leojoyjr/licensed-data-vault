@@ -13,6 +13,8 @@ export interface VaultEnv {
     shelbyRpcEndpoint: string;
     aptosFullnode: string;
     aptosIndexer: string;
+    /** Account the receipt_log Move module is published under. */
+    receiptLogModuleAddress: string;
     /** Optional. Requests are rate limited harder without one. */
     shelbyApiKey?: string;
 }
@@ -24,7 +26,10 @@ const REQUIRED_KEYS = [
     "SHELBY_RPC_ENDPOINT",
     "APTOS_FULLNODE",
     "APTOS_INDEXER",
+    "RECEIPT_LOG_MODULE_ADDRESS",
 ] as const;
+
+const HEX_ADDRESS = /^0x[0-9a-fA-F]{1,64}$/;
 
 /**
  * Minimal .env reader. A dependency is avoided because the format used here is
@@ -81,9 +86,17 @@ export function loadVaultEnv(envFilePath = resolve(process.cwd(), ".env")): Vaul
     }
 
     const accountAddress = resolveValue("SHELBY_ACCOUNT_ADDRESS") as string;
-    if (!/^0x[0-9a-fA-F]{1,64}$/.test(accountAddress)) {
+    if (!HEX_ADDRESS.test(accountAddress)) {
         throw new Error(
             "SHELBY_ACCOUNT_ADDRESS must be a hex account address starting with 0x.",
+        );
+    }
+
+    const receiptLogModuleAddress = resolveValue("RECEIPT_LOG_MODULE_ADDRESS") as string;
+    if (!HEX_ADDRESS.test(receiptLogModuleAddress)) {
+        throw new Error(
+            "RECEIPT_LOG_MODULE_ADDRESS must be a hex account address starting with 0x. " +
+            "It is the address printed by 'aptos move publish' for the receipt_log module.",
         );
     }
 
@@ -94,6 +107,7 @@ export function loadVaultEnv(envFilePath = resolve(process.cwd(), ".env")): Vaul
         shelbyRpcEndpoint: resolveValue("SHELBY_RPC_ENDPOINT") as string,
         aptosFullnode: resolveValue("APTOS_FULLNODE") as string,
         aptosIndexer: resolveValue("APTOS_INDEXER") as string,
+        receiptLogModuleAddress,
         shelbyApiKey: resolveValue("SHELBY_API_KEY"),
     };
 }

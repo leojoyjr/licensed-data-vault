@@ -59,7 +59,8 @@ async function main(): Promise<void> {
         `  content sha256: ${result.receipt.contentSha256}\n` +
         `  served at: ${result.receipt.servedAt}\n` +
         `  license: ${result.license.licenseId} (${result.license.rightsHolder}) for ${result.license.permittedUse}, expires ${result.license.expiresAt}\n` +
-        `  read event: reader ${result.readEvent.readerId}, run ${result.readEvent.trainingRunId}`,
+        `  read event: reader ${result.readEvent.readerId}, run ${result.readEvent.trainingRunId}\n` +
+        `  receipt log txn: ${result.receiptLogTransactionHash}`,
     );
 }
 

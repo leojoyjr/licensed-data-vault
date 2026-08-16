@@ -6,11 +6,11 @@ Shelby is a verifiable object storage protocol that returns proofs of what it se
 
 ## Status
 
-Sprints 1 through 3 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, and every read goes through one middleware function that enforces the license and captures a verifiable receipt. Later sprints add the Aptos Move receipt log, the audit report generator, and a demo website.
+Sprints 1 through 4 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, every read goes through one middleware function that enforces the license and captures a verifiable receipt, and each served read is logged as an event by a Move module on Shelbynet. Later sprints add the audit report generator and a demo website.
 
 ## Requirements
 
-Node.js v22 or later, npm, and git. The Shelby CLI is installed globally with `npm install -g @shelby-protocol/cli`.
+Node.js v22 or later, npm, and git. The Shelby CLI is installed globally with `npm install -g @shelby-protocol/cli`. The Aptos CLI is needed to compile and publish the Move module, installed with `brew install aptos`.
 
 ## Setup
 
@@ -127,9 +127,38 @@ merkleRootMatchesManifest   whether the recomputed root equals the root recorded
 
 Recomputing the root with the same `generateCommitments` the upload path used is the verification step. It only matches the root recorded at upload if the bytes served are the bytes that were stored, so a mismatch means the content changed and the middleware refuses to return it rather than handing back unverified data. Every receipt field comes from the SDK response or from recomputation over the served bytes, never from caller input, so a caller cannot fabricate what was served.
 
-A successful read also produces a `ReadEvent` of `{ blobHash, licenseId, readerId, trainingRunId, timestamp, receiptPayload }`. Sprint 4 anchors that event on Aptos. `readerId` and `trainingRunId` are required, because a read that cannot be attributed to a reader and a run cannot be audited.
+A successful read also produces a `ReadEvent` of `{ blobHash, licenseId, readerId, trainingRunId, timestamp, receiptPayload }`, which is anchored on Aptos before the content is returned. `readerId` and `trainingRunId` are required, because a read that cannot be attributed to a reader and a run cannot be audited.
 
 Reads against the shared Shelbynet RPC without an API key are rate limited, and the RPC answers `429 Too Many Requests` when the limit is hit. The Shelby CLI fails the same way under the same conditions, so a 429 is a throttle rather than a defect. Wait and retry, or set `SHELBY_API_KEY` in `.env`.
+
+## The on-chain receipt log
+
+`move/sources/receipt_log.move` is the audit chain of record. It emits one `ReadLogged` event per read with `blob_hash`, `license_id`, `reader`, `training_run_id`, and `timestamp_us`. Nothing is stored mutably, because an audit log that can be edited proves nothing, and events are permanent in the transaction history.
+
+Two fields are deliberately not function arguments. `reader` comes from `signer::address_of(account)`, so a caller cannot log a read under someone else's identity, and `timestamp_us` comes from `timestamp::now_microseconds()`, so a caller with a wrong or dishonest clock cannot place a read outside its license window. The entry function also rejects an empty blob hash, license ID, or run ID, since none of those can be audited.
+
+Compile, test, and publish from `move/`, substituting the signing account address:
+
+```
+aptos move compile --named-addresses receipt_log=<address>
+aptos move test --named-addresses receipt_log=<address>
+aptos move publish --profile shelbynet --named-addresses receipt_log=<address>
+```
+
+The Aptos CLI needs a profile pointing at Shelbynet. It is created from the key already in `.env`, so no second account is involved:
+
+```
+aptos init --profile shelbynet --network custom \
+  --rest-url https://api.shelbynet.shelby.xyz/v1 --skip-faucet --private-key <key>
+```
+
+Record the published address in `.env` as `RECEIPT_LOG_MODULE_ADDRESS`. The module address is the publisher's address, so it matches `SHELBY_ACCOUNT_ADDRESS` unless the module was published from a different account. `src/audit/chainWriter.ts` submits `log_read` through the Aptos TypeScript SDK, waits for the transaction to commit, and returns its hash. Waiting matters because a submitted transaction can still fail during execution, and an unconfirmed receipt is not a logged receipt.
+
+`readLicensedBlob` calls the writer after the merkle root check and before returning. A chain write failure propagates and the caller gets no content, even though the bytes were already fetched. That is deliberate. The vault's guarantee is that every served read is logged, so a read the audit trail does not contain must not look like a successful read. Verify any read on the explorer:
+
+```
+curl -s https://api.shelbynet.shelby.xyz/v1/transactions/by_hash/<txnHash> | jq '.events'
+```
 
 ## Layout
 
@@ -140,11 +169,12 @@ Reads against the shared Shelbynet RPC without an API key are rate limited, and 
 ```
 npm install
 npx tsc --noEmit
+npm test
 shelby account balance
 git status --ignored
 ```
 
-The type check should pass, balances should be nonzero, and `.env` should appear under ignored files rather than tracked files.
+The type check and tests should pass, balances should be nonzero, and `.env` should appear under ignored files rather than tracked files.
 
 ## Sprint workflow
 

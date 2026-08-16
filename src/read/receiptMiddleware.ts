@@ -4,6 +4,7 @@ import {
     createDefaultErasureCodingProvider,
     generateCommitments,
 } from "@shelby-protocol/sdk/node";
+import { logReadOnChain } from "../audit/chainWriter.js";
 import type { LicenseMetadata, PermittedUse } from "../licenses/schema.js";
 import { getShelbyContext } from "../shelby/client.js";
 import { DEFAULT_MANIFEST_PATH, findManifestEntry } from "../upload/manifest.js";
@@ -60,6 +61,8 @@ export interface LicensedReadResult {
     receipt: ReadReceipt;
     readEvent: ReadEvent;
     license: LicenseMetadata;
+    /** Hash of the receipt_log transaction that anchored this read on Aptos. */
+    receiptLogTransactionHash: string;
 }
 
 /** Thrown when a read is refused on license grounds, before any network call. */
@@ -113,6 +116,15 @@ export function createShelbyDownloader(): BlobDownloader {
     };
 }
 
+/** Injected so tests can assert on-chain logging without submitting transactions. */
+export interface ReceiptLogWriter {
+    logRead(event: ReadEvent): Promise<string>;
+}
+
+const aptosReceiptLogWriter: ReceiptLogWriter = {
+    logRead: (event) => logReadOnChain({ event }),
+};
+
 export interface ReadLicensedBlobParams {
     blobName: string;
     readerId: string;
@@ -120,6 +132,7 @@ export interface ReadLicensedBlobParams {
     /** What the caller intends to do with the bytes, checked against the license. */
     declaredUse: PermittedUse;
     downloader?: BlobDownloader;
+    receiptLogWriter?: ReceiptLogWriter;
     manifestPath?: string;
     now?: Date;
 }
@@ -205,18 +218,29 @@ export async function readLicensedBlob(
         );
     }
 
+    const readEvent: ReadEvent = {
+        blobHash: merkleRoot,
+        licenseId: license.licenseId,
+        readerId,
+        trainingRunId,
+        timestamp: receipt.servedAt,
+        receiptPayload: receipt,
+    };
+
+    // A chain write failure propagates and the caller gets no content, even though
+    // the bytes were already fetched. That is deliberate: the vault's guarantee is
+    // that every served read is logged, so a read the audit trail does not contain
+    // must not look like a successful read. Returning content with a swallowed
+    // logging error would produce exactly the silent gap the audit exists to catch.
+    const writer = params.receiptLogWriter ?? aptosReceiptLogWriter;
+    const receiptLogTransactionHash = await writer.logRead(readEvent);
+
     return {
         content: served.bytes,
         receipt,
-        readEvent: {
-            blobHash: merkleRoot,
-            licenseId: license.licenseId,
-            readerId,
-            trainingRunId,
-            timestamp: receipt.servedAt,
-            receiptPayload: receipt,
-        },
+        readEvent,
         license,
+        receiptLogTransactionHash,
     };
 }
 

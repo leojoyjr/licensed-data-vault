@@ -8,6 +8,7 @@ import {
     LicenseDeniedError,
     readLicensedBlob,
     type BlobDownloader,
+    type ReceiptLogWriter,
 } from "../src/read/receiptMiddleware.js";
 import { writeManifest } from "../src/upload/manifest.js";
 
@@ -15,11 +16,12 @@ const NOW = new Date("2026-01-01T00:00:00.000Z");
 const SERVED_BYTES = Buffer.from("licensed training sample");
 
 /**
- * The real merkle root for SERVED_BYTES, computed by the stub. Tests assert the
- * middleware compares roots rather than trusting the manifest, so the stub can
- * return a deliberately wrong root to simulate tampered storage.
+ * The blob merkle root generateCommitments produces for SERVED_BYTES, taken from a
+ * real run of the middleware. It is hardcoded so the manifest fixture agrees with
+ * what the middleware recomputes, which lets tests reach the code after the root
+ * comparison without stubbing the commitment step.
  */
-const CORRECT_ROOT = "0xroot-for-served-bytes";
+const CORRECT_ROOT = "0xef58d927f5143157bfed36c903d44cbb908cf06472d34e4b58a755d20995460c";
 
 function license(overrides: Partial<LicenseMetadata> = {}): LicenseMetadata {
     return {
@@ -44,10 +46,7 @@ function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
     };
 }
 
-/**
- * Stubs both the download and the commitment step, since generateCommitments needs
- * the native erasure coding provider and these tests must not touch it or the network.
- */
+/** Stubs the download so no test touches the network. */
 function createStubDownloader(): BlobDownloader & { calls: string[] } {
     const calls: string[] = [];
     return {
@@ -63,18 +62,75 @@ function createStubDownloader(): BlobDownloader & { calls: string[] } {
     };
 }
 
+/** Stubs the on-chain write so no test submits a transaction or needs a funded key. */
+function createStubReceiptLogWriter(
+    hash = "0xtxn",
+): ReceiptLogWriter & { loggedRunIds: string[] } {
+    const loggedRunIds: string[] = [];
+    return {
+        loggedRunIds,
+        async logRead(event) {
+            loggedRunIds.push(event.trainingRunId);
+            return hash;
+        },
+    };
+}
+
 function writeTestManifest(entries: ManifestEntry[]): string {
     const manifestPath = join(mkdtempSync(join(tmpdir(), "vault-read-")), "manifest.json");
     writeManifest(entries, manifestPath);
     return manifestPath;
 }
 
-/**
- * readLicensedBlob computes the merkle root through the SDK's native provider,
- * which is unavailable in unit tests, so the happy path is asserted by patching
- * the root comparison through a manifest entry whose root the stub reproduces.
- * These tests focus on the license gate, which is the security-relevant logic.
- */
+test("readLicensedBlob returns content, a receipt, and a logged transaction hash", async () => {
+    const manifestPath = writeTestManifest([manifestEntry()]);
+    const downloader = createStubDownloader();
+    const receiptLogWriter = createStubReceiptLogWriter("0xlogged");
+
+    const result = await readLicensedBlob({
+        blobName: "vault/sample.txt",
+        readerId: "trainer-1",
+        trainingRunId: "run-42",
+        declaredUse: "training",
+        downloader,
+        receiptLogWriter,
+        manifestPath,
+        now: NOW,
+    });
+
+    assert.deepEqual(downloader.calls, ["vault/sample.txt"]);
+    assert.equal(Buffer.from(result.content).toString(), SERVED_BYTES.toString());
+    assert.equal(result.receipt.merkleRoot, CORRECT_ROOT);
+    assert.equal(result.receipt.merkleRootMatchesManifest, true);
+    assert.equal(result.receipt.servedByAccount, "0xabc");
+    assert.equal(result.receipt.servedAt, NOW.toISOString());
+    assert.equal(result.readEvent.blobHash, CORRECT_ROOT);
+    assert.equal(result.readEvent.licenseId, "LIC-001");
+    assert.equal(result.receiptLogTransactionHash, "0xlogged");
+    assert.deepEqual(receiptLogWriter.loggedRunIds, ["run-42"]);
+});
+
+test("readLicensedBlob refuses content whose served bytes do not match the upload root", async () => {
+    const manifestPath = writeTestManifest([manifestEntry({ merkleRoot: "0xdeadbeef" })]);
+    const receiptLogWriter = createStubReceiptLogWriter();
+
+    await assert.rejects(
+        readLicensedBlob({
+            blobName: "vault/sample.txt",
+            readerId: "trainer-1",
+            trainingRunId: "run-42",
+            declaredUse: "training",
+            downloader: createStubDownloader(),
+            receiptLogWriter,
+            manifestPath,
+            now: NOW,
+        }),
+        /does not match the root recorded at upload/,
+    );
+    // Tampered content is never logged as a legitimate read.
+    assert.deepEqual(receiptLogWriter.loggedRunIds, []);
+});
+
 test("readLicensedBlob rejects an unknown blob without downloading", async () => {
     const manifestPath = writeTestManifest([]);
     const downloader = createStubDownloader();
@@ -212,6 +268,7 @@ test("readLicensedBlob wraps a download failure without leaking the cause object
             trainingRunId: "run-42",
             declaredUse: "training",
             downloader: failingDownloader,
+            receiptLogWriter: createStubReceiptLogWriter(),
             manifestPath,
             now: NOW,
         }),
@@ -219,5 +276,52 @@ test("readLicensedBlob wraps a download failure without leaking the cause object
             error instanceof Error &&
             error.message.startsWith("Shelby read failed for blob 'vault/sample.txt':") &&
             error.cause === undefined,
+    );
+});
+
+test("readLicensedBlob does not log a refused read on chain", async () => {
+    const manifestPath = writeTestManifest([manifestEntry()]);
+    const downloader = createStubDownloader();
+    const receiptLogWriter = createStubReceiptLogWriter();
+
+    await assert.rejects(
+        readLicensedBlob({
+            blobName: "vault/sample.txt",
+            readerId: "trainer-1",
+            trainingRunId: "run-42",
+            declaredUse: "evaluation",
+            downloader,
+            receiptLogWriter,
+            manifestPath,
+            now: NOW,
+        }),
+        LicenseDeniedError,
+    );
+    assert.deepEqual(downloader.calls, []);
+    assert.deepEqual(receiptLogWriter.loggedRunIds, []);
+});
+
+test("readLicensedBlob surfaces a chain logging failure instead of returning content", async () => {
+    const manifestPath = writeTestManifest([manifestEntry()]);
+    const failingWriter: ReceiptLogWriter = {
+        async logRead() {
+            throw new Error("Failed to log read of blob 0xroot for run run-42 on chain: timeout");
+        },
+    };
+
+    // The bytes were already fetched at this point. The read still fails, because a
+    // served read missing from the audit log would be an invisible compliance gap.
+    await assert.rejects(
+        readLicensedBlob({
+            blobName: "vault/sample.txt",
+            readerId: "trainer-1",
+            trainingRunId: "run-42",
+            declaredUse: "training",
+            downloader: createStubDownloader(),
+            receiptLogWriter: failingWriter,
+            manifestPath,
+            now: NOW,
+        }),
+        /Failed to log read/,
     );
 });
