@@ -1,0 +1,23 @@
+{
+    "name": "licensed-data-vault",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Licensed training data vault on Shelby with per-asset consent receipts",
+    "type": "module",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "node --test tests"
+    },
+    "dependencies": {
+        "@aptos-labs/ts-sdk": "^6.0.0",
+        "@shelby-protocol/sdk": "^0.7.1"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.2",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2"
+    }
+}
