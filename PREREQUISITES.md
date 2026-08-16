@@ -1,90 +1,97 @@
-# What is needed from you before the remaining sprints
+# What is needed from you to run this yourself
 
-Sprints 1 through 3 are done and needed nothing from you beyond the Shelbynet
-account that `shelby init` created and the faucet funds already in it. Nothing is
-missing retroactively. This file records what the remaining sprints need, so the
-items that involve a browser login or a human decision can be collected in one
-pass instead of blocking mid sprint.
+All eight sprints are complete, so nothing here blocks development. This file is
+now a checklist for a fresh machine: the steps that need a browser, a human
+decision, or a globally installed tool, collected in one place so they can be done
+in a single pass rather than discovered one failure at a time.
 
 ## Required
 
-### Aptos CLI, for Sprint 4
+### Node.js v22 or later
 
-The Move module is compiled, tested, and published with the Aptos CLI, and it is
-not installed on this machine. It is free, no account or key needed, and it is
-the only hard blocker for Sprint 4:
+Everything in `src/` and `web/` targets Node 22. Check with `node --version`.
+
+### The Shelby CLI, and an account
+
+```
+npm install -g @shelby-protocol/cli
+shelby init --setup-default
+```
+
+`shelby init` creates the account and writes `~/.shelby/config.yaml` with
+shelbynet as the default context. Copy the printed address and private key into
+`.env`, using `.env.example` as the template. That key is the one the vault signs
+with, so it stays in `.env` and nowhere else.
+
+### Faucet funds
+
+Uploads cost ShelbyUSD and every transaction costs APT for gas, so the account
+needs both before anything will work:
+
+```
+./scripts/fundAccount.sh
+shelby account balance
+```
+
+If the faucet service rejects the scripted request, the browser page is the
+fallback and the only step that genuinely needs a human:
+
+```
+shelby faucet --network shelbynet --no-open
+```
+
+Open the printed URL and complete the request there. The faucet has per-window
+limits, so top up when a balance is actually low rather than in advance. The
+website spends ShelbyUSD faster than the CLI does, because a demo invites repeated
+uploads, which is why uploads through the site are capped at 1 MB.
+
+### The Aptos CLI, to publish the Move module
 
 ```
 brew install aptos
 aptos --version
 ```
 
-The CLI will need an `~/.aptos` profile pointing at Shelbynet. That profile is
-created from the private key already in `.env`, so no new key is generated and
-nothing new needs to be funded. Publishing costs APT for gas, and the account
-holds 2.97 APT, which is far more than a module publish needs.
-
-### More faucet funds, once, before Sprint 6
-
-The account currently holds 2.97 APT and 0.29 ShelbyUSD. APT is fine for the
-rest of the project. ShelbyUSD is the storage fee token, and the demo site in
-Sprint 6 uploads through the browser, so the balance will be spent faster than
-the CLI has been spending it. The faucet request has to go through a browser
-page, so it is a task only you can do:
+The module has to be published before any read can be logged, since
+`readLicensedBlob` writes the receipt on chain before returning content. Create a
+profile from the key already in `.env`, so no second account exists:
 
 ```
-shelby faucet --network shelbynet
+aptos init --profile shelbynet --network custom \
+  --rest-url https://api.shelbynet.shelby.xyz/v1 --skip-faucet --private-key <key>
 ```
 
-Do this when Sprint 6 starts rather than now, since the faucet has per-window
-limits and topping up early wastes the allowance.
-
-## Optional, and worth having
-
-### `SHELBY_API_KEY`
-
-The shared Shelbynet RPC rate limits unauthenticated traffic and answers `429
-Too Many Requests` when the limit is hit. Sprint 3 already hit this during
-testing. The SDK accepts an API key, `src/config/env.ts` already reads
-`SHELBY_API_KEY` as an optional variable, and `src/shelby/client.ts` already
-passes it to the RPC and indexer, so adding one is a matter of pasting a value
-into `.env` with no code change:
+Then from `move/`:
 
 ```
-SHELBY_API_KEY=<key>
+aptos move test --named-addresses receipt_log=<address>
+aptos move publish --profile shelbynet --named-addresses receipt_log=<address>
 ```
 
-Shelby does not hand these out through a self service dashboard yet. The route
-is to ask in the Shelby Discord, https://discord.gg/shelbyserves, for a Shelbynet
-RPC key for a project doing repeated reads. Everything works without it. The
-symptom of not having it is intermittent 429 responses during the Sprint 6 demo,
-which is survivable for a demo but looks like a bug to anyone watching.
+Record the published address in `.env` as `RECEIPT_LOG_MODULE_ADDRESS`. It is the
+publisher's address, so it equals `SHELBY_ACCOUNT_ADDRESS` unless the module was
+published from somewhere else.
 
-## Explicitly not needed
+## Optional
 
-No paid API keys, cloud accounts, or third party services are required by any
-sprint. Specifically:
+### A Shelby API key
 
-Aptos does not require an API key for Shelbynet reads or writes, so Sprint 4 and
-Sprint 5 talk to the fullnode and indexer endpoints already in `.env` without
-credentials. Sprint 5 queries the same endpoints. Sprint 6 uses React, Vite, and
-the Material Web Components, all installed from npm with no account. Sprint 7 and
-Sprint 8 are review and cleanup, run entirely locally.
+Reads against the shared Shelbynet RPC without a key are rate limited, and the RPC
+answers `429 Too Many Requests` when the limit is hit. That is a throttle rather
+than a defect, and the Shelby CLI fails the same way under the same conditions.
+Setting `SHELBY_API_KEY` in `.env` raises the limit. Without it, wait and retry.
 
-No new private key is needed at any point. The single account in `.env` signs
-uploads, reads, the module publish, and every receipt log.
+## Confirming everything is in place
 
-## Decisions settled
+```
+npm install
+npx tsc --noEmit
+npm test
+(cd web && npm install && npm run build)
+shelby account balance
+git status --ignored
+```
 
-The Move module publishes from the existing account in `.env`, confirmed, so the
-receipt log lives at that account's address permanently and no second account is
-created.
-
-Sprint 6 builds the demo site and serves it locally, reachable at localhost on
-this machine. That is the default and needs nothing extra.
-
-## Summary
-
-Install the Aptos CLI before Sprint 4. Request faucet funds again when Sprint 6
-starts. Ask Discord for a `SHELBY_API_KEY` at any point, since it only reduces
-rate limiting and is not required. Nothing else is needed from your end.
+The type check, tests, and web build should pass, both balances should be nonzero,
+and `.env` should appear under ignored files rather than tracked ones. If the last
+point is not true, stop and fix it before committing anything.

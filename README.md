@@ -6,7 +6,7 @@ Shelby is a verifiable object storage protocol that returns proofs of what it se
 
 ## Status
 
-Sprints 1 through 5 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, every read goes through one middleware function that enforces the license and captures a verifiable receipt, each served read is logged as an event by a Move module on Shelbynet, and the audit command turns those events into a compliance report for any training run. The last sprint adds a demo website.
+All eight sprints are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, every read goes through one middleware function that enforces the license and captures a verifiable receipt, each served read is logged as an event by a Move module on Shelbynet, the audit command turns those events into a compliance report for any training run, and a Material Design 3 website in `web/` drives all three operations from a browser. `SECURITY.md` records the threat model, the protections at each boundary, and the known limitations.
 
 ## Requirements
 
@@ -189,9 +189,27 @@ Reads are matched to licenses by merkle root rather than by blob name. The hash 
 
 `src/audit/chainQuery.ts` reads the events back. The Shelbynet indexer's GraphQL schema exposes no `events` root field, confirmed by introspecting `query_root`, so the usual indexer event query is unavailable on this network. The fullnode's account transactions endpoint is used instead, since it returns each transaction with its events inline. That scopes the audit to the logging account's own transactions, which is correct for this vault where one operator account writes every receipt. A malformed event is skipped rather than thrown on, because one unparseable transaction in an account's history must not make the entire audit unavailable.
 
+## The demo website
+
+`web/` is a Material Design 3 site over the same functions the CLI uses. Install and run it:
+
+```
+cd web
+npm install
+npm run dev
+```
+
+That starts two processes: the API on `http://localhost:8787` and the UI on `http://localhost:5173`. Open the UI. The three destinations map to the three operations, upload a file with its license, read a blob and see the receipt, and audit a training run.
+
+The API in `web/server/index.ts` holds no business logic. Uploads call `uploadLicensedFile`, reads call `readLicensedBlob`, and audits call `generateAuditReport`, so the license rules and receipt handling are the ones already covered by tests rather than a second implementation that could drift from the first. It exists for one reason: the signing key must stay in a Node process. Signing in a browser would ship the key to every visitor, so the browser sends a request and the server does anything that costs money or touches the key.
+
+The read view shows a refusal as a normal result rather than an error, because a refused read is the system working. A license that permits `evaluation` will decline a `training` read, and the reason it gives is the reason the middleware produced. Successful reads link to the receipt transaction on the Aptos explorer, so the on-chain record is one click from the UI claim.
+
+Theme values come from `web/src/theme/m3Tokens.ts`, a single generated stylesheet of M3 tokens. Both the Material components and the layout CSS read those tokens, so there is no second palette to keep in sync, and no raw hex outside that one file. Uploads are capped at 1 MB and the two routes that spend tokens are rate limited, since a demo that drains the funded account stops being a demo. Build the production bundle with `npm run build`, which type checks first and fails the build on any type error.
+
 ## Layout
 
-`src/config` holds environment loading. `src/licenses` holds the license metadata type and its validation. `src/upload` holds the upload pipeline. `src/read` holds the read receipt middleware. `src/audit` holds the report generator and the chain queries it needs. `src/shelby` holds the shared Shelby client. `move` holds the Aptos Move module that records receipts. `scripts` holds operational shell scripts. `web` holds the demo site, added in a later sprint. `tests` holds test files.
+`src/config` holds environment loading. `src/licenses` holds the license metadata type and its validation. `src/upload` holds the upload pipeline. `src/read` holds the read receipt middleware. `src/audit` holds the report generator and the chain queries it needs. `src/shelby` holds the shared Shelby client. `move` holds the Aptos Move module that records receipts. `scripts` holds operational shell scripts. `tests` holds test files. `web` holds the demo site, with `web/server` for the API, `web/src/views` for the three screens, and `web/src/theme` for the design tokens.
 
 ## Verifying the setup
 
@@ -199,12 +217,17 @@ Reads are matched to licenses by merkle root rather than by blob name. The hash 
 npm install
 npx tsc --noEmit
 npm test
+(cd web && npm install && npm run build)
 shelby account balance
 git status --ignored
 ```
 
-The type check and tests should pass, balances should be nonzero, and `.env` should appear under ignored files rather than tracked files.
+The type checks, tests, and web build should all pass, balances should be nonzero, and `.env` should appear under ignored files rather than tracked files.
+
+## Security
+
+`SECURITY.md` documents the threat model, where the private key is read and why it is read nowhere else, the validation applied at every boundary, the two Move decisions that make the receipt log hard to forge, and the known limitations. The gaps are listed there deliberately: the local API has no authentication, the manifest is unsigned, and one key performs every role. Each is acceptable for a single-operator demo and would need addressing before this ran as a service.
 
 ## Sprint workflow
 
-Work happens one sprint at a time against the plan in `Shelby Licensed Training Data Vault - Implementation Plan.md`. Each sprint ends with its definition-of-done checks, a security review, and a single commit, then stops until the next sprint is approved. Nothing from a later sprint is started early, because each sprint reads the previous sprint's committed code as its starting point.
+Work happened one sprint at a time against the plan in `Shelby Licensed Training Data Vault - Implementation Plan.md`. Each sprint ended with its definition-of-done checks, a security review, and a single commit, then stopped until the next sprint was approved. Nothing from a later sprint was started early, because each sprint reads the previous sprint's committed code as its starting point.
