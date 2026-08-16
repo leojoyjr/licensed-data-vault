@@ -6,7 +6,7 @@ Shelby is a verifiable object storage protocol that returns proofs of what it se
 
 ## Status
 
-Sprints 1 through 4 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, every read goes through one middleware function that enforces the license and captures a verifiable receipt, and each served read is logged as an event by a Move module on Shelbynet. Later sprints add the audit report generator and a demo website.
+Sprints 1 through 5 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, every read goes through one middleware function that enforces the license and captures a verifiable receipt, each served read is logged as an event by a Move module on Shelbynet, and the audit command turns those events into a compliance report for any training run. The last sprint adds a demo website.
 
 ## Requirements
 
@@ -159,6 +159,35 @@ Record the published address in `.env` as `RECEIPT_LOG_MODULE_ADDRESS`. The modu
 ```
 curl -s https://api.shelbynet.shelby.xyz/v1/transactions/by_hash/<txnHash> | jq '.events'
 ```
+
+## The audit report
+
+Generate the compliance report for a training run:
+
+```
+npm run audit:run -- --run run-sprint5
+```
+
+It prints each logged read with its license and transaction hash, then a verdict:
+
+```
+Audit report for training run run-sprint5
+  verdict: COMPLIANT
+  reads logged on chain: 1 (1 compliant, 1 distinct blobs)
+
+  OK   vault/sprint2-sample.txt
+       read at 2026-08-16T16:08:14.268Z by 0x95a9e017...
+       license LIC-SPRINT2-001 (Example Archive Ltd, training, expires 2027-01-01T00:00:00.000Z)
+       txn 0xd08edee3cc25f0b70c75f35bd0a5e51480dc5bf6ae8ce80c545371fe35b26704
+```
+
+Add `--json` for machine-readable output, or `--out reports/run.json` to write the report to a file. The command exits non-zero when a run is not compliant, so a CI job or a release gate can block a model whose training data cannot be shown to have been licensed.
+
+Each read is judged against the license as it stood at the read's chain timestamp, not against the current time. This is the point of the whole design. A license that has since expired does not invalidate a read that happened while it was live, and a report that compared against "now" would both condemn lawful reads and clear reads that happened after expiry. Four verdicts are possible: `compliant`, `expired-at-read` when the read postdates the license expiry, `unlicensed` when the license on chain disagrees with the manifest or its expiry is unreadable, and `unknown-blob` when no manifest entry matches the logged blob hash. A run with no logged reads is reported as not compliant, because an empty audit trail is an absence of evidence rather than evidence of compliance.
+
+Reads are matched to licenses by merkle root rather than by blob name. The hash identifies the exact bytes that were served, whereas a name could later be pointed at different content.
+
+`src/audit/chainQuery.ts` reads the events back. The Shelbynet indexer's GraphQL schema exposes no `events` root field, confirmed by introspecting `query_root`, so the usual indexer event query is unavailable on this network. The fullnode's account transactions endpoint is used instead, since it returns each transaction with its events inline. That scopes the audit to the logging account's own transactions, which is correct for this vault where one operator account writes every receipt. A malformed event is skipped rather than thrown on, because one unparseable transaction in an account's history must not make the entire audit unavailable.
 
 ## Layout
 
