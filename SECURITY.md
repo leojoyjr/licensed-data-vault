@@ -68,6 +68,11 @@ filesystem.
   account and end the demo for everyone.
 - **Numbers** such as `expirationDays` are bounds-checked rather than passed
   through, since they translate directly into storage cost.
+- **Report paths** are derived, not accepted. The training run ID becomes part of
+  the report file name, so it must match `[A-Za-z0-9._-]+`, and an explicit
+  `--out` path is rejected if it resolves outside the working directory. Table
+  cells in the Markdown report escape pipes and backslashes so metadata cannot
+  break the table structure or forge a row.
 
 ## On-chain integrity
 

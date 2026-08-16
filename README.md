@@ -181,7 +181,11 @@ Audit report for training run run-sprint5
        txn 0xd08edee3cc25f0b70c75f35bd0a5e51480dc5bf6ae8ce80c545371fe35b26704
 ```
 
-Add `--json` for machine-readable output, or `--out reports/run.json` to write the report to a file. The command exits non-zero when a run is not compliant, so a CI job or a release gate can block a model whose training data cannot be shown to have been licensed.
+Every run also writes `reports/audit-<runId>-<date>.md`, the Markdown report an auditor is handed. It contains the verdict, a table of reads with their status, license, rights holder, permitted use, reader, and time, a findings section when something is flagged, and a verification section repeating every blob hash and transaction hash with the exact `curl` command that resolves it. The verification section is the point of the format: a report an auditor cannot independently check is a claim rather than evidence.
+
+Use `--out` to choose a different destination, where a `.json` extension writes JSON instead of Markdown, and `--json` prints the JSON to stdout. Generated reports are gitignored because they describe one operator's reads, and `reports/.gitkeep` keeps the directory present on a fresh clone. The command exits non-zero when a run is not compliant, so a CI job or a release gate can block a model whose training data cannot be shown to have been licensed.
+
+The run ID becomes part of the report file name, so it is restricted to letters, digits, dot, dash, and underscore, and an explicit `--out` path is refused if it resolves outside the project directory.
 
 Each read is judged against the license as it stood at the read's chain timestamp, not against the current time. This is the point of the whole design. A license that has since expired does not invalidate a read that happened while it was live, and a report that compared against "now" would both condemn lawful reads and clear reads that happened after expiry. Four verdicts are possible: `compliant`, `expired-at-read` when the read postdates the license expiry, `unlicensed` when the license on chain disagrees with the manifest or its expiry is unreadable, and `unknown-blob` when no manifest entry matches the logged blob hash. A run with no logged reads is reported as not compliant, because an empty audit trail is an absence of evidence rather than evidence of compliance.
 

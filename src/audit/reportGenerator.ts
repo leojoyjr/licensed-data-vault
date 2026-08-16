@@ -211,3 +211,85 @@ export function formatAuditReport(report: AuditReport): string {
 
     return lines.join("\n");
 }
+
+/** Escapes the pipe and backslash characters that would otherwise break a table row. */
+function escapeTableCell(value: string): string {
+    return value.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+}
+
+/**
+ * Renders the report as Markdown, which is the format an auditor is handed. The
+ * verification section repeats every blob hash and transaction hash in full so the
+ * reader can resolve each one on the explorer without trusting this document. A
+ * report that cannot be independently checked is a claim rather than evidence.
+ */
+export function formatAuditReportAsMarkdown(
+    report: AuditReport,
+    fullnodeUrl = "https://api.shelbynet.shelby.xyz/v1",
+): string {
+    const lines: string[] = [
+        `# Audit report for training run ${report.trainingRunId}`,
+        "",
+        `Generated at ${report.generatedAt}.`,
+        "",
+        `Verdict: ${report.compliant ? "compliant" : "not compliant"}. ` +
+        `${report.totalReads} reads were logged on chain for this run, ` +
+        `${report.compliantReads} of them compliant, across ${report.distinctBlobs} distinct blobs.`,
+        "",
+        "## Reads",
+        "",
+    ];
+
+    if (report.reads.length === 0) {
+        lines.push(
+            "No reads were logged on chain for this run. An empty audit trail is an absence of evidence rather than evidence of compliance.",
+            "",
+        );
+    } else {
+        lines.push(
+            "| Status | File | License | Rights holder | Permitted use | Reader | Read at |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        );
+        for (const read of report.reads) {
+            lines.push(
+                [
+                    "",
+                    read.verdict === "compliant" ? "verified" : `flagged: ${read.verdict}`,
+                    escapeTableCell(read.blobName ?? read.blobHash),
+                    escapeTableCell(read.licenseId),
+                    escapeTableCell(read.license?.rightsHolder ?? "unknown"),
+                    escapeTableCell(read.license?.permittedUse ?? "unknown"),
+                    escapeTableCell(read.reader),
+                    read.timestamp,
+                    "",
+                ].join(" | ").trim(),
+            );
+        }
+        lines.push("");
+    }
+
+    if (report.problems.length > 0) {
+        lines.push("## Findings", "");
+        for (const problem of report.problems) {
+            lines.push(`- ${problem}`);
+        }
+        lines.push("");
+    }
+
+    lines.push(
+        "## Verification",
+        "",
+        "Each read below can be checked independently. The transaction is the record of what was read, and the blob hash identifies the exact bytes served.",
+        "",
+    );
+    for (const read of report.reads) {
+        lines.push(
+            `- ${read.blobName ?? "unknown blob"}`,
+            `  - blob hash: \`${read.blobHash}\``,
+            `  - transaction: \`${read.transactionHash}\``,
+            `  - resolve with: \`curl -s ${fullnodeUrl}/transactions/by_hash/${read.transactionHash} | jq '.events'\``,
+        );
+    }
+
+    return `${lines.join("\n")}\n`;
+}

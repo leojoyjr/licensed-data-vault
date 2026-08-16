@@ -1,0 +1,3 @@
+# Generated audit reports are written here as audit-<runId>-<date>.md.
+# The directory is tracked so the path exists on a fresh clone. The reports are
+# not: they describe one operator's reads, and the chain is their source of truth.

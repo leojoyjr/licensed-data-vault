@@ -8,7 +8,11 @@ import {
     selectRunReceipts,
     type ReceiptTransactionSource,
 } from "../src/audit/chainQuery.js";
-import { formatAuditReport, generateAuditReport } from "../src/audit/reportGenerator.js";
+import {
+    formatAuditReport,
+    formatAuditReportAsMarkdown,
+    generateAuditReport,
+} from "../src/audit/reportGenerator.js";
 import type { LicenseMetadata, ManifestEntry } from "../src/licenses/schema.js";
 import { writeManifest } from "../src/upload/manifest.js";
 
@@ -317,4 +321,66 @@ test("formatAuditReport prints the verdict, each read, and the findings", async 
     assert.match(text, /OK {3}vault\/sprint2-sample\.txt/);
     assert.match(text, /txn 0xtxn1/);
     assert.doesNotMatch(text, /Findings:/);
+});
+
+test("markdown report carries a verification entry for every read", async () => {
+    const report = await generateAuditReport({
+        trainingRunId: "run-sprint4",
+        manifestPath: writeTestManifest([manifestEntry()]),
+        moduleAddress: MODULE_ADDRESS,
+        source: source([[transaction([readLoggedEvent()])]]),
+    });
+
+    const markdown = formatAuditReportAsMarkdown(report);
+    assert.match(markdown, /^# Audit report for training run run-sprint4$/m);
+    assert.match(markdown, /Verdict: compliant\./);
+    assert.match(markdown, /\| verified \| vault\/sprint2-sample\.txt \| LIC-SPRINT2-001 \|/);
+    // The verification section is the point of the Markdown format: an auditor must
+    // be able to resolve every hash without trusting the report.
+    assert.match(markdown, /## Verification/);
+    assert.match(markdown, new RegExp(`blob hash: \`${BLOB_ROOT}\``));
+    assert.match(markdown, /transactions\/by_hash\/0xtxn1/);
+});
+
+test("markdown report reports an empty run as an absence of evidence", async () => {
+    const report = await generateAuditReport({
+        trainingRunId: "run-with-no-reads",
+        manifestPath: writeTestManifest([manifestEntry()]),
+        receipts: [],
+    });
+
+    const markdown = formatAuditReportAsMarkdown(report);
+    assert.match(markdown, /Verdict: not compliant\./);
+    assert.match(markdown, /absence of evidence/);
+    assert.match(markdown, /## Findings/);
+});
+
+test("markdown report flags a read whose license had expired, without dropping it", async () => {
+    const report = await generateAuditReport({
+        trainingRunId: "run-sprint4",
+        manifestPath: writeTestManifest([
+            manifestEntry({ license: license({ expiresAt: "2026-01-01T00:00:00.000Z" }) }),
+        ]),
+        moduleAddress: MODULE_ADDRESS,
+        source: source([[transaction([readLoggedEvent()])]]),
+    });
+
+    const markdown = formatAuditReportAsMarkdown(report);
+    assert.match(markdown, /\| flagged: expired-at-read \|/);
+    assert.match(markdown, /## Findings/);
+    // A flagged read still appears in verification. Removing it would hide the finding.
+    assert.match(markdown, /transactions\/by_hash\/0xtxn1/);
+});
+
+test("markdown report escapes a pipe in metadata so the table cannot be broken", async () => {
+    const report = await generateAuditReport({
+        trainingRunId: "run-sprint4",
+        manifestPath: writeTestManifest([
+            manifestEntry({ license: license({ rightsHolder: "Archive | Ltd" }) }),
+        ]),
+        moduleAddress: MODULE_ADDRESS,
+        source: source([[transaction([readLoggedEvent()])]]),
+    });
+
+    assert.match(formatAuditReportAsMarkdown(report), /Archive \\\| Ltd/);
 });
