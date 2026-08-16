@@ -1,0 +1,2 @@
+Licensed sample asset for the Shelby vault demo.
+Uploaded during Sprint 2 end-to-end verification.

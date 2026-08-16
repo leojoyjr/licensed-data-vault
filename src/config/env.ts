@@ -1,4 +1,99 @@
-// Sprint 1 keeps this file intentionally minimal. It exists so the folder tree
-// and the TypeScript project have a compilable entry point before feature code
-// lands in Sprint 2, where the real environment loader is written here.
-export const PROJECT_NAME = "licensed-data-vault";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+/**
+ * Environment variables this project needs. The names match .env.example, which
+ * documents them with dummy values. The private key is read here and nowhere
+ * else, and is never included in error messages or logs.
+ */
+export interface VaultEnv {
+    accountAddress: string;
+    accountPrivateKey: string;
+    aptosNetwork: string;
+    shelbyRpcEndpoint: string;
+    aptosFullnode: string;
+    aptosIndexer: string;
+    /** Optional. Requests are rate limited harder without one. */
+    shelbyApiKey?: string;
+}
+
+const REQUIRED_KEYS = [
+    "SHELBY_ACCOUNT_ADDRESS",
+    "SHELBY_ACCOUNT_PRIVATE_KEY",
+    "APTOS_NETWORK",
+    "SHELBY_RPC_ENDPOINT",
+    "APTOS_FULLNODE",
+    "APTOS_INDEXER",
+] as const;
+
+/**
+ * Minimal .env reader. A dependency is avoided because the format used here is
+ * only KEY=value lines, and fewer dependencies means fewer packages that can
+ * read process memory holding the private key.
+ */
+function readEnvFile(envFilePath: string): Record<string, string> {
+    let raw: string;
+    try {
+        raw = readFileSync(envFilePath, "utf8");
+    } catch (cause) {
+        // A missing .env is normal when variables come from the real environment,
+        // so this is not fatal on its own. Missing keys are reported below.
+        if ((cause as NodeJS.ErrnoException).code === "ENOENT") {
+            return {};
+        }
+        throw new Error(`Could not read ${envFilePath}`, { cause });
+    }
+
+    const parsed: Record<string, string> = {};
+    for (const line of raw.split("\n")) {
+        const trimmed = line.trim();
+        if (trimmed === "" || trimmed.startsWith("#")) {
+            continue;
+        }
+        const separatorIndex = trimmed.indexOf("=");
+        if (separatorIndex === -1) {
+            continue;
+        }
+        const key = trimmed.slice(0, separatorIndex).trim();
+        const value = trimmed.slice(separatorIndex + 1).trim();
+        parsed[key] = value.replace(/^["']|["']$/g, "");
+    }
+    return parsed;
+}
+
+/**
+ * Loads configuration and fails immediately with every missing variable listed,
+ * so a misconfigured setup is fixed in one pass instead of one error at a time.
+ */
+export function loadVaultEnv(envFilePath = resolve(process.cwd(), ".env")): VaultEnv {
+    const fileValues = readEnvFile(envFilePath);
+    const resolveValue = (key: string): string | undefined => {
+        const value = process.env[key] ?? fileValues[key];
+        return value && value.trim() !== "" ? value.trim() : undefined;
+    };
+
+    const missing = REQUIRED_KEYS.filter((key) => resolveValue(key) === undefined);
+    if (missing.length > 0) {
+        throw new Error(
+            `Missing required environment variables: ${missing.join(", ")}. ` +
+            `Copy .env.example to .env and fill in the values printed by 'shelby init --setup-default'.`,
+        );
+    }
+
+    const accountAddress = resolveValue("SHELBY_ACCOUNT_ADDRESS") as string;
+    if (!/^0x[0-9a-fA-F]{1,64}$/.test(accountAddress)) {
+        throw new Error(
+            "SHELBY_ACCOUNT_ADDRESS must be a hex account address starting with 0x.",
+        );
+    }
+
+    return {
+        accountAddress,
+        accountPrivateKey: resolveValue("SHELBY_ACCOUNT_PRIVATE_KEY") as string,
+        aptosNetwork: resolveValue("APTOS_NETWORK") as string,
+        shelbyRpcEndpoint: resolveValue("SHELBY_RPC_ENDPOINT") as string,
+        aptosFullnode: resolveValue("APTOS_FULLNODE") as string,
+        aptosIndexer: resolveValue("APTOS_INDEXER") as string,
+        shelbyApiKey: resolveValue("SHELBY_API_KEY"),
+    };
+}

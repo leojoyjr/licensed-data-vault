@@ -6,7 +6,7 @@ Shelby is a verifiable object storage protocol that returns proofs of what it se
 
 ## Status
 
-Sprint 1 is complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, and the signing account is funded with APT and ShelbyUSD. There is no feature code yet. Later sprints add the upload pipeline, the read receipt middleware, the Aptos Move receipt log, the audit report generator, and a demo website.
+Sprints 1 and 2 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, and the upload pipeline stores files on Shelby with validated license metadata recorded in a local manifest. Later sprints add the read receipt middleware, the Aptos Move receipt log, the audit report generator, and a demo website.
 
 ## Requirements
 
@@ -50,7 +50,58 @@ Check balances at any time:
 shelby account balance
 ```
 
-Both APT and ShelbyUSD must be nonzero before any upload will succeed.
+Both APT and ShelbyUSD must be nonzero before any upload will succeed. An upload that fails with `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE` means the APT balance ran out, and `E_INSUFFICIENT_FUNDS` means ShelbyUSD did. Rerun the fund script in either case.
+
+## Uploading licensed files
+
+Every file goes up with a license attached. License metadata lives in a JSON file next to the data so the exact approved rights text stays under version control:
+
+```json
+{
+  "licenseId": "LIC-SPRINT2-001",
+  "rightsHolder": "Example Archive Ltd",
+  "permittedUse": "training",
+  "expiresAt": "2027-01-01T00:00:00.000Z",
+  "source": "Signed data license agreement, sprint 2 verification asset"
+}
+```
+
+`permittedUse` is one of `training`, `inference`, or `evaluation`. `expiresAt` must be a full ISO 8601 timestamp in the future. Upload a single file:
+
+```
+npm run upload:file -- --file samples/sprint2-sample.txt --license samples/sprint2-sample.license.json --blob-name vault/sprint2-sample.txt --days 7
+```
+
+Upload a whole directory, passing a JSON object that maps each file name to its license:
+
+```
+npm run upload:dataset -- --dir samples --licenses samples/licenses.json --prefix vault/ --days 7
+```
+
+`--days` sets how long Shelby stores the blob, which is separate from how long the license permits use. A dataset upload validates every license before the first network call and aborts the entire batch if any file is unlicensed, expired, or names a file that is not present. A partially uploaded dataset is worse than none, because a training run against it looks complete while missing assets.
+
+## The manifest
+
+Each successful upload appends to `data/manifest.json`, which is the local join table between Shelby blobs and their licenses:
+
+```json
+{
+  "blobName": "vault/sprint2-sample.txt",
+  "merkleRoot": "0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e4580947",
+  "license": { "licenseId": "LIC-SPRINT2-001", "permittedUse": "training", "...": "..." },
+  "uploadedAt": "2026-08-16T15:24:00.589Z",
+  "blobExpiresAt": "2026-08-23T15:24:00.589Z",
+  "sizeBytes": 99
+}
+```
+
+Shelby stores bytes and commitments, not rights information, so the mapping from blob to license has to live somewhere the read path can consult before serving anything. The manifest is gitignored because it describes one operator's uploads, and it is written by writing a temporary file and renaming it over the target, so a crash cannot leave half-written JSON. The `merkleRoot` is the blob merkle root Shelby computes from the file's commitments, and it matches what `shelby commitment <file> <out.json>` reports for the same bytes.
+
+Confirm an upload landed:
+
+```
+shelby account blobs
+```
 
 ## Layout
 
