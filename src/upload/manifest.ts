@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import type { ManifestEntry } from "../licenses/schema.js";
 
@@ -8,8 +9,16 @@ import type { ManifestEntry } from "../licenses/schema.js";
  * from blob name to license has to live somewhere the read path can consult
  * before serving anything. It is a file rather than a database because the audit
  * chain of record is Aptos, and this only needs to be a fast local lookup.
+ *
+ * The path is resolved from this file's location, not from the working directory.
+ * The web API runs with its own working directory, and a manifest that moved with
+ * the caller would mean a blob uploaded by the CLI looked unlicensed to the API,
+ * which the read path would correctly but wrongly refuse to serve. One vault has
+ * one manifest.
  */
-export const DEFAULT_MANIFEST_PATH = resolve(process.cwd(), "data", "manifest.json");
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+export const DEFAULT_MANIFEST_PATH = resolve(PROJECT_ROOT, "data", "manifest.json");
 
 export function readManifest(manifestPath = DEFAULT_MANIFEST_PATH): ManifestEntry[] {
     let raw: string;

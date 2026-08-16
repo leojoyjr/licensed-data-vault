@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 /**
  * Environment variables this project needs. The names match .env.example, which
- * documents them with dummy values. The private key is read here and nowhere
- * else, and is never included in error messages or logs.
+ * documents each one with a zero-filled placeholder. The private key is read
+ * here and nowhere else, and is never included in error messages or logs.
  */
 export interface VaultEnv {
     accountAddress: string;
@@ -30,6 +31,17 @@ const REQUIRED_KEYS = [
 ] as const;
 
 const HEX_ADDRESS = /^0x[0-9a-fA-F]{1,64}$/;
+
+/**
+ * The .env lives beside the project, not beside whoever happens to be calling.
+ * The web API's working directory is web/, so a cwd-relative default made the
+ * same vault look unconfigured depending on which entry point you used. Real
+ * process environment variables still win, which is how deployments should
+ * supply these.
+ */
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+export const DEFAULT_ENV_FILE_PATH = resolve(PROJECT_ROOT, ".env");
 
 /**
  * Minimal .env reader. A dependency is avoided because the format used here is
@@ -70,7 +82,7 @@ function readEnvFile(envFilePath: string): Record<string, string> {
  * Loads configuration and fails immediately with every missing variable listed,
  * so a misconfigured setup is fixed in one pass instead of one error at a time.
  */
-export function loadVaultEnv(envFilePath = resolve(process.cwd(), ".env")): VaultEnv {
+export function loadVaultEnv(envFilePath = DEFAULT_ENV_FILE_PATH): VaultEnv {
     const fileValues = readEnvFile(envFilePath);
     const resolveValue = (key: string): string | undefined => {
         const value = process.env[key] ?? fileValues[key];

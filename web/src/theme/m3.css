@@ -1,5 +1,5 @@
 /*
- * Layout and surface styling for the demo site. Every color, radius, and font
+ * Layout and surface styling for the vault site. Every color, radius, and font
  * value here reads a custom property defined in src/theme/m3Tokens.ts. Nothing in
  * this file hardcodes a color, so retheming means editing the token file only.
  *

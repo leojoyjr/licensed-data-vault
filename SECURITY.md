@@ -2,7 +2,7 @@
 
 This project holds a funded key and serves licensed data, so the security work is
 part of the feature rather than an afterthought. This document records what is
-protected, how, and what is deliberately out of scope for a demo.
+protected, how, and what is deliberately out of scope for a single-operator deployment.
 
 ## Threat model
 
@@ -19,7 +19,7 @@ The vault has four assets worth protecting, in descending order of damage if los
 4. **The manifest.** It is the only mapping from blob to license, so corrupting it
    makes every read unverifiable.
 
-The attackers considered are a curious user of the demo site, a malicious client
+The attackers considered are a curious user of the site, a malicious client
 sending crafted requests to the local API, a dependency that has been tampered
 with, and an auditor who is lied to by a doctored local log.
 
@@ -64,8 +64,8 @@ filesystem.
   become paths in the Shelby namespace, so a name is not free-form text.
 - **Request bodies** are length-capped per field, uploads are capped at 1 MB, and
   `express.json` has its own body limit. The two routes that spend tokens are rate
-  limited per client, because a held-down button on a demo can otherwise empty the
-  account and end the demo for everyone.
+  limited per client, because a held-down button can otherwise empty the
+  account and take the vault offline.
 - **Numbers** such as `expirationDays` are bounds-checked rather than passed
   through, since they translate directly into storage cost.
 - **Report paths** are derived, not accepted. The training run ID becomes part of
@@ -108,7 +108,7 @@ handed over.
 ## Known limitations
 
 These are honest gaps, not oversights, and each is a consequence of this being a
-single-operator demo rather than a deployed service.
+single-operator deployment rather than a shared service.
 
 - **The local API has no authentication.** It binds to localhost and assumes the
   person running it is the operator. Exposing it to a network would require real
@@ -123,7 +123,7 @@ single-operator demo rather than a deployed service.
   account, so the receipt log proves the vault read a file, not which person did.
   Distinct reader keys would make attribution meaningful.
 - **Rate limiting is in memory.** It resets when the process restarts and is per
-  process, which is adequate for a demo and not for anything shared.
+  process, which is adequate for one operator and not for anything shared.
 - **No content encryption at rest.** Shelby stores the bytes as uploaded, so the
   license is enforced by this vault's read path rather than by cryptography. A
   party who obtains a blob name and has direct Shelby access is outside the model.

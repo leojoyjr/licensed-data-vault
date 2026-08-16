@@ -3,9 +3,9 @@ import { PERMITTED_USES } from "../licenses/schema.js";
 import { readLicensedBlob } from "./receiptMiddleware.js";
 
 /**
- * Demo entry point for a licensed read. It prints the receipt rather than the
- * bytes, because the point of the demo is the provenance record, and training
- * content does not belong in a terminal log.
+ * Command line entry point for a licensed read. It prints the receipt rather
+ * than the bytes, because the receipt is the auditable output and training
+ * content does not belong in a terminal log or a shell history.
  */
 function parseFlags(argv: string[]): Record<string, string> {
     const flags: Record<string, string> = {};

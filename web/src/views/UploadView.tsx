@@ -29,7 +29,8 @@ interface FormState {
     expirationDays: string;
 }
 
-/** A year out is a sane default for a demo license and keeps the form usable. */
+/** A year out is a reasonable default license term and keeps the form usable.
+ * It is only a prefill: the real expiry comes from the rights agreement. */
 function defaultExpiry(): string {
     const oneYearOut = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     return oneYearOut.toISOString().slice(0, 10);

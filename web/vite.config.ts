@@ -21,7 +21,7 @@ export default defineConfig({
     },
     build: {
         outDir: "dist",
-        // Source maps make a failing demo diagnosable without a rebuild.
+        // Source maps make a production failure diagnosable without a rebuild.
         sourcemap: true,
     },
 });

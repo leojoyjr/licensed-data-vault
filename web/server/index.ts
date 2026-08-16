@@ -28,7 +28,9 @@ const MAX_UPLOAD_BYTES = 1024 * 1024;
 const MAX_FIELD_LENGTH = 512;
 const MAX_BLOB_EXPIRATION_DAYS = 30;
 
-/** One request at a time per client window is enough for a demo, and it bounds spend. */
+/** One paid request per client per window. Every upload and read spends real
+ * ShelbyUSD and gas, so this is the difference between a bounded bill and an
+ * open faucet for anyone who can reach the port. */
 const MIN_MS_BETWEEN_PAID_REQUESTS = 2000;
 const paidRequestLastSeen = new Map<string, number>();
 
@@ -116,7 +118,7 @@ function decodeUploadBytes(body: Record<string, unknown>): Buffer {
     if (bytes.byteLength > MAX_UPLOAD_BYTES) {
         throw {
             status: 413,
-            message: `Files must be ${MAX_UPLOAD_BYTES} bytes or smaller in this demo.`,
+            message: `Files must be ${MAX_UPLOAD_BYTES} bytes or smaller.`,
         } satisfies RequestFailure;
     }
     return bytes;
@@ -136,7 +138,7 @@ function readExpirationDays(body: Record<string, unknown>): number {
 
 /**
  * Throttles the two routes that spend tokens. Without this a held-down button
- * could empty the ShelbyUSD balance, which ends the demo for everyone.
+ * could empty the ShelbyUSD balance and take the vault offline.
  */
 function enforcePaidRequestInterval(request: Request): void {
     const client = request.ip ?? "unknown";
@@ -239,8 +241,9 @@ app.post("/api/read", async (request, response) => {
             trainingRunId: readStringField(body, "trainingRunId"),
             declaredUse: readPermittedUse(body, "declaredUse"),
         });
-        // Content bytes are deliberately not returned. The demo shows provenance,
-        // and shipping training data to a browser is not part of that.
+        // Content bytes are deliberately not returned. The receipt is what a
+        // browser needs, and shipping licensed training data to one is not part
+        // of proving provenance.
         response.json({
             receipt: result.receipt,
             license: result.license,

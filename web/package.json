@@ -2,7 +2,7 @@
     "name": "licensed-data-vault-web",
     "version": "0.1.0",
     "private": true,
-    "description": "Material Design 3 demo site for the licensed training data vault",
+    "description": "Material Design 3 website for the licensed training data vault",
     "type": "module",
     "engines": {
         "node": ">=22"

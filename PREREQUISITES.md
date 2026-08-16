@@ -42,7 +42,7 @@ shelby faucet --network shelbynet --no-open
 
 Open the printed URL and complete the request there. The faucet has per-window
 limits, so top up when a balance is actually low rather than in advance. The
-website spends ShelbyUSD faster than the CLI does, because a demo invites repeated
+website spends ShelbyUSD faster than the CLI does, because a browser form invites repeated
 uploads, which is why uploads through the site are capped at 1 MB.
 
 ### The Aptos CLI, to publish the Move module
