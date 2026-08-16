@@ -160,13 +160,15 @@ Every successful upload appends to `data/manifest.json`:
 ```json
 {
   "blobName": "vault/example-dataset.txt",
-  "merkleRoot": "0x4e4648c9cf4b7325f3ef1405eb22dafddb33e9248c874c7712e096e4fd9eb28c",
+  "merkleRoot": "0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e4580947",
   "license": { "licenseId": "LIC-EXAMPLE-001", "permittedUse": "training", "...": "..." },
-  "uploadedAt": "2026-08-16T18:40:59.412Z",
-  "blobExpiresAt": "2026-08-23T18:40:59.412Z",
-  "sizeBytes": 112
+  "uploadedAt": "2026-08-16T19:56:59.157Z",
+  "blobExpiresAt": "2026-08-23T19:56:59.157Z",
+  "sizeBytes": 99
 }
 ```
+
+That entry is real, and so is every hash and timestamp quoted in this README. They come from running these exact commands against Shelbynet.
 
 Shelby stores bytes and commitments, not rights information, so the blob-to-license mapping has to live somewhere the read path can consult before serving anything. This file is that place. It resolves relative to the project directory rather than your shell's working directory, so the CLI and the website always see the same vault. It is written by writing a temp file and renaming it over the target, so a crash cannot leave you with half-written JSON. It is gitignored because it describes one operator's uploads.
 
@@ -178,19 +180,22 @@ The `merkleRoot` is what Shelby computed from the file's commitments, and it mat
 npm run read:blob -- \
   --blob-name vault/example-dataset.txt \
   --reader trainer-1 \
-  --run run-001 \
+  --run run-final \
   --use training
 ```
 
-Output looks like this, with a real transaction hash:
+Output from an actual run:
 
 ```
-Read vault/example-dataset.txt (112 bytes)
-  merkle root: 0x4e4648c9cf4b7325f3ef1405eb22dafddb33e9248c874c7712e096e4fd9eb28c
+Read vault/example-dataset.txt (99 bytes)
+  served by account: 0x95a9e0179f40d0cea2642fe26786fe67fa16d21edbff267746262fdfb06c9be8
+  merkle root: 0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e4580947
   matches upload root: true
-  license: LIC-EXAMPLE-001 (Example Archive Ltd) for training, expires 2027-06-01T00:00:00.000Z
-  read event: reader trainer-1, run run-001
-  receipt log txn: 0xc275a05fc24fd652a900aae7220a6ac23af03ce7be2ca6d15bd85376c59f51c0
+  content sha256: 0x1f283beecdc92fcccd539d71f9272b22001d7998a7a31b3582d3d5d7d5c91837
+  served at: 2026-08-16T19:57:47.962Z
+  license: LIC-EXAMPLE-001 (Example Archive Ltd) for training, expires 2027-01-01T00:00:00.000Z
+  read event: reader trainer-1, run run-final
+  receipt log txn: 0xfaa3f66987cc206f7cd2b7f4fc90d5523de78c88afb5441fe91e3925aba338ef
 ```
 
 `--reader` and `--run` are required, because a read that cannot be attributed to a reader and a training run cannot be audited.
@@ -198,7 +203,7 @@ Read vault/example-dataset.txt (112 bytes)
 Try declaring a use the license does not permit:
 
 ```
-npm run read:blob -- --blob-name vault/example-dataset.txt --reader trainer-1 --run run-001 --use inference
+npm run read:blob -- --blob-name vault/example-dataset.txt --reader trainer-1 --run run-final --use inference
 ```
 
 ```
@@ -244,18 +249,19 @@ curl -s https://api.shelbynet.shelby.xyz/v1/transactions/by_hash/<txnHash> | jq 
 ### The audit report
 
 ```
-npm run audit:run -- --run run-001
+npm run audit:run -- --run run-final
 ```
 
 ```
-Audit report for training run run-001
+Audit report for training run run-final
+  generated at: 2026-08-16T19:59:22.546Z
   verdict: COMPLIANT
   reads logged on chain: 1 (1 compliant, 1 distinct blobs)
 
   OK   vault/example-dataset.txt
-       read at 2026-08-16T18:41:23.532Z by 0x95a9e017...
-       license LIC-EXAMPLE-001 (Example Archive Ltd, training, expires 2027-06-01T00:00:00.000Z)
-       txn 0xc275a05fc24fd652a900aae7220a6ac23af03ce7be2ca6d15bd85376c59f51c0
+       read at 2026-08-16T19:57:50.270Z by 0x95a9e017...
+       license LIC-EXAMPLE-001 (Example Archive Ltd, training, expires 2027-01-01T00:00:00.000Z)
+       txn 0xfaa3f66987cc206f7cd2b7f4fc90d5523de78c88afb5441fe91e3925aba338ef
 ```
 
 Each run also writes `reports/audit-<runId>-<date>.md`, which is the artifact you actually hand an auditor. It has the verdict, a table of every read with status, license, rights holder, permitted use, reader, and time, a findings section when something is flagged, and a verification section repeating every blob hash and transaction hash with the exact `curl` that resolves it. That last section is the point of the format: a report the reader cannot independently check is a claim, not evidence.
