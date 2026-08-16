@@ -1,0 +1,421 @@
+/*
+ * Layout and surface styling for the demo site. Every color, radius, and font
+ * value here reads a custom property defined in src/theme/m3Tokens.ts. Nothing in
+ * this file hardcodes a color, so retheming means editing the token file only.
+ *
+ * Spacing uses multiples of --vault-spacing-base, which is the 4dp grid described
+ * at https://m3.material.io/foundations/layout/understanding-layout/spacing.
+ */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-background);
+    font-family: var(--md-sys-typescale-body-large-font);
+    font-size: var(--md-sys-typescale-body-large-size);
+    line-height: var(--md-sys-typescale-body-large-line-height);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+}
+
+/* Type scale roles, applied as classes so markup names the role it is using. */
+.m3-display-small {
+    font-size: var(--md-sys-typescale-display-small-size);
+    line-height: var(--md-sys-typescale-display-small-line-height);
+    font-weight: var(--md-sys-typescale-display-small-weight);
+    letter-spacing: var(--md-sys-typescale-display-small-tracking);
+    margin: 0;
+}
+
+.m3-headline-small {
+    font-size: var(--md-sys-typescale-headline-small-size);
+    line-height: var(--md-sys-typescale-headline-small-line-height);
+    font-weight: var(--md-sys-typescale-headline-small-weight);
+    letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+    margin: 0;
+}
+
+.m3-title-large {
+    font-size: var(--md-sys-typescale-title-large-size);
+    line-height: var(--md-sys-typescale-title-large-line-height);
+    font-weight: var(--md-sys-typescale-title-large-weight);
+    letter-spacing: var(--md-sys-typescale-title-large-tracking);
+    margin: 0;
+}
+
+.m3-title-medium {
+    font-size: var(--md-sys-typescale-title-medium-size);
+    line-height: var(--md-sys-typescale-title-medium-line-height);
+    font-weight: var(--md-sys-typescale-title-medium-weight);
+    letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+    margin: 0;
+}
+
+.m3-body-large {
+    font-size: var(--md-sys-typescale-body-large-size);
+    line-height: var(--md-sys-typescale-body-large-line-height);
+    font-weight: var(--md-sys-typescale-body-large-weight);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+    margin: 0;
+}
+
+.m3-body-medium {
+    font-size: var(--md-sys-typescale-body-medium-size);
+    line-height: var(--md-sys-typescale-body-medium-line-height);
+    font-weight: var(--md-sys-typescale-body-medium-weight);
+    letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+    margin: 0;
+}
+
+.m3-body-small {
+    font-size: var(--md-sys-typescale-body-small-size);
+    line-height: var(--md-sys-typescale-body-small-line-height);
+    font-weight: var(--md-sys-typescale-body-small-weight);
+    letter-spacing: var(--md-sys-typescale-body-small-tracking);
+    margin: 0;
+}
+
+.m3-label-large {
+    font-size: var(--md-sys-typescale-label-large-size);
+    line-height: var(--md-sys-typescale-label-large-line-height);
+    font-weight: var(--md-sys-typescale-label-large-weight);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    margin: 0;
+}
+
+.m3-label-medium {
+    font-size: var(--md-sys-typescale-label-medium-size);
+    line-height: var(--md-sys-typescale-label-medium-line-height);
+    font-weight: var(--md-sys-typescale-label-medium-weight);
+    letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+    margin: 0;
+}
+
+.on-surface-variant {
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+/*
+ * Small top app bar. The spec's small variant is 64dp tall with the headline at
+ * the title-large role, and it sits on the surface color with no elevation until
+ * the content behind it scrolls.
+ * https://m3.material.io/components/top-app-bar/specs
+ */
+.top-app-bar {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--vault-spacing-base) * 4);
+    height: 64px;
+    padding: 0 calc(var(--vault-spacing-base) * 4);
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.top-app-bar--scrolled {
+    /* On-scroll state uses surface-container, per the top app bar spec. */
+    background: var(--md-sys-color-surface-container);
+}
+
+.top-app-bar__leading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+
+.top-app-bar__account {
+    margin-left: auto;
+    color: var(--md-sys-color-on-surface-variant);
+    font-family: var(--md-sys-typescale-label-medium-font);
+}
+
+/* Navigation rail on wide viewports, navigation bar on narrow ones, per M3. */
+.app-shell {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    min-height: calc(100dvh - 64px);
+}
+
+.nav-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--vault-spacing-base) * 3);
+    padding: calc(var(--vault-spacing-base) * 3) 0;
+    background: var(--md-sys-color-surface);
+}
+
+/*
+ * Navigation rail item. The active indicator is a 56x32 pill in
+ * secondary-container with an on-secondary-container icon, and the label sits
+ * below at the label-medium role.
+ * https://m3.material.io/components/navigation-rail/specs
+ */
+.nav-rail__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--vault-spacing-base);
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: pointer;
+    font-family: var(--md-sys-typescale-label-medium-font);
+    font-size: var(--md-sys-typescale-label-medium-size);
+    line-height: var(--md-sys-typescale-label-medium-line-height);
+    font-weight: var(--md-sys-typescale-label-medium-weight);
+    letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+.nav-rail__indicator {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 32px;
+    border-radius: var(--md-sys-shape-corner-full);
+    overflow: hidden;
+}
+
+/*
+ * State layers are drawn as an overlay tinted with currentColor at the spec
+ * opacities, which is how M3 renders hover, focus, and pressed states.
+ * https://m3.material.io/foundations/interaction/states/state-layers
+ */
+.nav-rail__indicator::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 90ms linear;
+}
+
+.nav-rail__item:hover .nav-rail__indicator::after {
+    opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.nav-rail__item:active .nav-rail__indicator::after {
+    opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+
+.nav-rail__item:focus-visible {
+    outline: none;
+}
+
+.nav-rail__item:focus-visible .nav-rail__indicator {
+    /* 3dp focus ring in the secondary color, per the focus ring spec. */
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: 2px;
+}
+
+.nav-rail__item[aria-selected="true"] {
+    color: var(--md-sys-color-on-surface);
+}
+
+.nav-rail__item[aria-selected="true"] .nav-rail__indicator {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+}
+
+.main-pane {
+    padding: calc(var(--vault-spacing-base) * 6);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--vault-spacing-base) * 6);
+    max-width: 1040px;
+}
+
+.view-header {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--vault-spacing-base) * 2);
+}
+
+/* Card content padding is 16dp, and cards use the medium corner token. */
+md-outlined-card,
+md-filled-card,
+md-elevated-card {
+    --md-outlined-card-container-shape: var(--md-sys-shape-corner-medium);
+    --md-filled-card-container-shape: var(--md-sys-shape-corner-medium);
+    --md-elevated-card-container-shape: var(--md-sys-shape-corner-medium);
+    display: block;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--vault-spacing-base) * 4);
+    padding: calc(var(--vault-spacing-base) * 4);
+}
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--vault-spacing-base) * 4);
+}
+
+.field-row>* {
+    flex: 1 1 240px;
+}
+
+.actions-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--vault-spacing-base) * 3);
+}
+
+.file-input {
+    font-family: var(--md-sys-typescale-body-medium-font);
+    font-size: var(--md-sys-typescale-body-medium-size);
+    color: var(--md-sys-color-on-surface);
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    padding: calc(var(--vault-spacing-base) * 3);
+    width: 100%;
+    background: var(--md-sys-color-surface);
+}
+
+.file-input:focus-visible {
+    outline: 3px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+.field-error {
+    color: var(--md-sys-color-error);
+}
+
+/* Key and value rows for receipts and license details. */
+.detail-grid {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) 1fr;
+    gap: calc(var(--vault-spacing-base) * 2) calc(var(--vault-spacing-base) * 4);
+}
+
+.detail-grid dt {
+    color: var(--md-sys-color-on-surface-variant);
+    font-family: var(--md-sys-typescale-label-large-font);
+    font-size: var(--md-sys-typescale-label-large-size);
+    font-weight: var(--md-sys-typescale-label-large-weight);
+}
+
+.detail-grid dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--md-sys-typescale-body-medium-font);
+    font-size: var(--md-sys-typescale-body-medium-size);
+}
+
+.hash-value {
+    font-family: ui-monospace, monospace;
+    overflow-wrap: anywhere;
+}
+
+a.explorer-link {
+    color: var(--md-sys-color-primary);
+    text-decoration: none;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+a.explorer-link:hover {
+    text-decoration: underline;
+}
+
+a.explorer-link:focus-visible {
+    outline: 3px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+/*
+ * Error banner. Uses the error-container role rather than a custom red, so the
+ * contrast pairing with on-error-container is the one the spec guarantees.
+ */
+.error-banner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--vault-spacing-base);
+    padding: calc(var(--vault-spacing-base) * 4);
+    border-radius: var(--md-sys-shape-corner-medium);
+    background: var(--md-sys-color-error-container);
+    color: var(--md-sys-color-on-error-container);
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--vault-spacing-base) * 2);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.read-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--vault-spacing-base) * 4);
+}
+
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--vault-spacing-base) * 2);
+    align-items: center;
+}
+
+/*
+ * Snackbar. M3 has no shipped snackbar web component, so this follows the spec
+ * directly: inverse-surface container, inverse-on-surface text, extra-small
+ * corner, level 3 elevation, 48dp minimum height.
+ * https://m3.material.io/components/snackbar/specs
+ */
+.snackbar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--vault-spacing-base) * 4);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--vault-spacing-base) * 2);
+    padding: calc(var(--vault-spacing-base) * 3) calc(var(--vault-spacing-base) * 4);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent),
+        0 4px 8px 3px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent);
+    max-width: 560px;
+}
+
+/* Narrow viewports move navigation to a bottom navigation bar, per M3 layout. */
+@media (max-width: 600px) {
+    .app-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .nav-rail {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        flex-direction: row;
+        justify-content: space-around;
+        height: 80px;
+        background: var(--md-sys-color-surface-container);
+        z-index: 1;
+    }
+
+    .main-pane {
+        padding-bottom: calc(var(--vault-spacing-base) * 24);
+    }
+}

@@ -1,0 +1,34 @@
+{
+    "name": "licensed-data-vault-web",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Material Design 3 demo site for the licensed training data vault",
+    "type": "module",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "dev": "concurrently -n api,ui -c blue,magenta \"npm run dev:api\" \"npm run dev:ui\"",
+        "dev:api": "tsx server/index.ts",
+        "dev:ui": "vite",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@material/web": "^2.5.0",
+        "express": "^5.2.1",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "@types/react": "^19.2.0",
+        "@types/react-dom": "^19.2.0",
+        "@vitejs/plugin-react": "^6.0.0",
+        "concurrently": "^9.1.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2",
+        "vite": "^8.2.1"
+    }
+}
