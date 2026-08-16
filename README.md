@@ -6,7 +6,7 @@ Shelby is a verifiable object storage protocol that returns proofs of what it se
 
 ## Status
 
-Sprints 1 and 2 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, and the upload pipeline stores files on Shelby with validated license metadata recorded in a local manifest. Later sprints add the read receipt middleware, the Aptos Move receipt log, the audit report generator, and a demo website.
+Sprints 1 through 3 are complete. The repository is scaffolded, the Shelby CLI is configured against Shelbynet, the signing account is funded with APT and ShelbyUSD, the upload pipeline stores files with validated license metadata recorded in a local manifest, and every read goes through one middleware function that enforces the license and captures a verifiable receipt. Later sprints add the Aptos Move receipt log, the audit report generator, and a demo website.
 
 ## Requirements
 
@@ -102,6 +102,34 @@ Confirm an upload landed:
 ```
 shelby account blobs
 ```
+
+## Reading a file, and what the receipt contains
+
+Reads go through `readLicensedBlob` in `src/read/receiptMiddleware.ts`. It is the only function in the codebase that downloads from Shelby, so there is no way for training code to bypass the license check:
+
+```
+npm run read:blob -- --blob-name vault/sprint2-sample.txt --reader trainer-1 --run run-sprint3 --use training
+```
+
+The middleware resolves the blob's license from the manifest, refuses the read if the license does not cover the declared use or has expired, and only then downloads. Checking before the network call means an unauthorized read never fetches bytes, so there is nothing to leak. Reads are also refused when the blob has no manifest entry, because an asset with no known license is not an asset the vault will serve.
+
+The installed SDK, version 0.7.1, returns `Promise<ShelbyBlob>` from `client.download({ account, blobName })`, and `ShelbyBlob` is `{ account, name, readable, contentLength }`. There is no receipt, signature, or proof field anywhere in its public types, so the middleware assembles the receipt from what a read verifiably produces:
+
+```
+blobName                    the blob that was requested
+servedByAccount             the account the RPC served it from, from the SDK response
+merkleRoot                  the blob merkle root recomputed from the served bytes
+contentSha256               SHA-256 of the served bytes
+servedBytes                 contentLength reported by the RPC
+servedAt                    when the read completed
+merkleRootMatchesManifest   whether the recomputed root equals the root recorded at upload
+```
+
+Recomputing the root with the same `generateCommitments` the upload path used is the verification step. It only matches the root recorded at upload if the bytes served are the bytes that were stored, so a mismatch means the content changed and the middleware refuses to return it rather than handing back unverified data. Every receipt field comes from the SDK response or from recomputation over the served bytes, never from caller input, so a caller cannot fabricate what was served.
+
+A successful read also produces a `ReadEvent` of `{ blobHash, licenseId, readerId, trainingRunId, timestamp, receiptPayload }`. Sprint 4 anchors that event on Aptos. `readerId` and `trainingRunId` are required, because a read that cannot be attributed to a reader and a run cannot be audited.
+
+Reads against the shared Shelbynet RPC without an API key are rate limited, and the RPC answers `429 Too Many Requests` when the limit is hit. The Shelby CLI fails the same way under the same conditions, so a 429 is a throttle rather than a defect. Wait and retry, or set `SHELBY_API_KEY` in `.env`.
 
 ## Layout
 
